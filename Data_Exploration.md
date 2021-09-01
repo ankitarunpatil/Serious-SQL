@@ -99,6 +99,7 @@ from cte;
 ### Identifying the duplicate records <br>
   
   - Using **Group BY**:
+  >- **Logic**
   >- Use count to calculate the frequency
   >- Retrive all the columns 
   >- Group by all the columns <br>
@@ -119,18 +120,21 @@ order by 7 desc;
 <br>
 
 ### Mean, median, mode logic <br>
+  
+  - Using **percentie, avg and mode** functions
+  >- **Logic**
+  >- Calculate median by using percentile of 0.5
+  >- Calculate mode using mode function
+  >- Calculate the mean using the average function
 
 ```sql 
 select 
-  id, 
-  log_date,
-  measure,
-  measure_value,
-  systolic,
-  diastolic,
-  count(*) as frequency
+  percentile_cont(0.5) within group(order by measure_value) as median_value,
+  mode() within group (order by measure_value) as mode_value,
+  avg(measure_value) as mean_value
 from health.user_logs
-group by 1,2,3,4,5,6
-order by 7 desc;
+where measure ='weight';
 ```
 <br>
+
+

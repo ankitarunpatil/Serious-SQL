@@ -1,14 +1,7 @@
-# Exploring The data 
+# Logic for different cases
 
-#### 1. How many rows are there in the films table ?
 
-``` sql
-SELECT
-  COUNT(*) AS row_count
-FROM dvd_rentals.film_list;
-```
-
-#### 2. How many unique category values are there in the film_list table?
+#### 1. How many unique category values are there in the film_list table?
 
 ```sql
 SELECT
@@ -27,7 +20,7 @@ GROUP BY rating
 ORDER BY 2 DESC;
 ```
 
-### Calculating percentage for each column using OVER()
+### Percentage logic - Percentage of records for each column
 #### 4. Adding a percentage column
 
 If I do not specify any argument in the over clause, the partition will be applied on the entire dataset

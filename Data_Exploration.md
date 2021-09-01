@@ -3,13 +3,17 @@
 
 #### 1. How many unique category values are there in the film_list table?
 
+
 ```sql
 SELECT
   COUNT(DISTINCT category) AS unique_category_count
-FROM dvd_rentals.film_list
+FROM dvd_rentals.film_list;
 ```
 
-#### 3. What is the frequency of values in the rating column in the film table?
+#### 2. What is the frequency of values in the rating column in the film table?
+
+Frequency with respect to each rating, frequency = count(*)
+
 
 ```sql
 SELECT
@@ -21,10 +25,10 @@ ORDER BY 2 DESC;
 ```
 
 ### Percentage logic - Percentage of records for each column
-#### 4. Adding a percentage column
+#### 3. Adding a percentage column<br>
 
 If I do not specify any argument in the over clause, the partition will be applied on the entire dataset
-So every adjacent row will contain the entire sum of the columns: 997
+So every adjacent row will contain the entire sum of the columns: 997<br>
 
 ```sql
 select 

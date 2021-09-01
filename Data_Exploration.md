@@ -41,4 +41,44 @@ group by 1
 order by 2 desc;
 ```
 
+### Detecting duplicate records logic 
+
+1. Find total records 
+
+```sql
+SELECT COUNT(*)
+FROM health.user_logs;
+```
+
+2. Find total distinct records 
+
+```sql
+select 
+  count(distinct *)  -- this does not work in postgres 
+from health.user_logs;
+```
+
+2.a. Using sub query
+
+```sql
+select
+  count(*)
+from 
+  (select 
+    distinct *
+  from health.user_logs) as subquery;
+```
+
+2.b. Using CTE
+
+```sql 
+with cte as 
+(select 
+  distinct *
+from health.user_logs
+)
+select 
+  count(*)
+from cte; 
+```
 

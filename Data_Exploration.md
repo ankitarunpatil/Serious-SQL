@@ -1,4 +1,4 @@
-# Logic for different cases
+# **Logic and Processes** for different cases
 
 
 #### 1. How many unique category values are there in the film_list table? <br>

@@ -247,3 +247,41 @@ order by measure_value;
 ```
 
 <br>
+
+
+### Removing Outliers
+<br>
+
+  - Using **Temp Tables**
+  >- **Logic**
+  >- Create a temporary tables where I will remove all the outliers by applying strict inequality conditions
+  >- Calulate summary statistics on the new temporary table 
+  >- Check for different results 
+ 
+<br>
+
+```sql
+drop table if exists clean_weight_logs;
+
+create temp table clean_weight_logs as 
+(select *
+from health.user_logs
+where measure = 'weight'
+and measure_value >0 
+and measure_value < 201);
+```
+
+<br>
+
+```sql
+select 
+  round(min(measure_value),2) as min_value,
+  round(max(measure_value),2) as max_value,
+  round(avg(measure_value),2) as avg_value,
+  round(cast(percentile_cont(0.5) within group (order by measure_value) as numeric),2) as median_value,
+  round(mode() within group (order by measure_value),2),
+  round(stddev(measure_value),2) as standard_deviation,
+  round(variance(measure_value),2) as variance_value
+from clean_weight_logs;
+
+```

@@ -257,6 +257,7 @@ order by measure_value;
   >- Create a temporary tables where I will remove all the outliers by applying strict inequality conditions
   >- Calulate summary statistics on the new temporary table 
   >- Check for different results 
+  >- Show the cumulative distribution with treated data 
  
 <br>
 
@@ -285,3 +286,25 @@ select
 from clean_weight_logs;
 
 ```
+
+<br>
+
+```sql
+with percentile_values as 
+(select 
+  measure_value,
+  ntile(100) over (order by measure_value) as percentile
+from clean_weight_logs
+where measure = 'weight')
+
+select 
+  percentile,
+  min(measure_value) as floor_value,
+  max(measure_value) as ceiling_value,
+  count(*) as percentile_counts
+from percentile_values
+group by 1
+order by 1;
+```
+
+<br>

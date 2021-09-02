@@ -138,3 +138,52 @@ where measure ='weight';
 <br>
 
 
+### Minimum, maximum, Range <br>
+
+  - Using **min, max** functions
+  >- **Logic**
+  >- Calculate min and max values 
+  >- Put min and max values in CTE
+  >- Then using CTE calculate the **range** - (this is more efficient as range will only be calculated on the min and max values obtained from CTE)
+  >- Hence, the query is optimized using CTE in this case 
+<br>
+
+```sql
+with min_max_values as 
+(select 
+  min(measure_value) as min_value,
+  max(measure_value) as max_value
+from health.user_logs
+where measure='weight')
+select 
+  min_value,
+  max_value,
+  max_value - min_value as range_value
+from min_max_values
+;
+```
+<br>
+### Summary Statistics <br>
+
+  - Using all the functions (min, max, avg, percentile, mode, stddev, variance)
+  >- **Logic**
+  >- Percentile count returns a flot that is incompatible with round, hence I will cast it to numeric
+  >- Write all the functions
+  >- Group by measure 
+<br>
+
+```sql
+select 
+  measure,
+  round(min(measure_value),2) as min_value,
+  round(max(measure_value),2) as max_value,
+  round(avg(measure_value),2) as avg_value,
+  round(cast(percentile_cont(0.5) within group (order by measure_value) as numeric),2) as median_value,
+  round(mode() within group (order by measure_value),2),
+  round(stddev(measure_value),2) as standard_deviation,
+  round(variance(measure_value),2) as variance_value
+from health.user_logs
+where measure = 'weight'
+group by 1;
+```
+<br>

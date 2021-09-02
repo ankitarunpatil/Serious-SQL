@@ -221,8 +221,8 @@ order by 1;
 <br>
 
 ### Checking outliers
-
 <br>
+
   - Using **Ntile**
   >- Calculate all the percentiles 
   >- Put this into CTE

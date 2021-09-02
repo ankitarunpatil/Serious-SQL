@@ -187,3 +187,63 @@ where measure = 'weight'
 group by 1;
 ```
 <br>
+
+
+### Bucket Calculations - putting all of the data in 100 buckets i.e. percentile values 
+<br>
+
+  - Using **NTILE** 
+  >- **Logic**
+  >- Order all the measure values from smallest to largest
+  >- Put this in a CTE
+  >- Calculate min and max values as floor and ceiling values 
+  >- Count the number of records in each percentile
+<br>
+
+```sql
+with percentile_values as 
+(select 
+  measure_value,
+  ntile(100) over (order by measure_value) as percentile
+from health.user_logs
+where measure = 'weight')
+
+select 
+  percentile,
+  min(measure_value) as floor_value,
+  max(measure_value) as ceiling_value,
+  count(*) as percentile_counts
+from percentile_values
+group by 1
+order by 1;
+
+```
+<br>
+
+### Checking outliers
+
+<br>
+  - Using **Ntile**
+  >- Calculate all the percentiles 
+  >- Put this into CTE
+  >- Calculate rank, dense_rank and filter with percentile value = 1 or 100 accordingly
+
+```sql
+with percentile_values as 
+(select 
+  measure_value,
+  ntile(100) over (order by measure_value) as percentile
+from health.user_logs
+where measure = 'weight')
+
+select 
+  measure_value,
+  row_number() over (order by measure_value) as row_number,
+  rank() over (order by measure_value) as rank_number,
+  dense_rank() over (order by measure_value) as dense_number
+from percentile_values
+where percentile = 1
+order by measure_value;
+```
+
+<br>

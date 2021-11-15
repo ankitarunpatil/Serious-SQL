@@ -1,1 +1,59 @@
 # Marketing Analytics
+
+# **Logic and Processes** for different cases
+
+
+#### 1. Query to find customer_id, category_name and rental count with respect to each cutomer id. <br>
+
+
+```sql
+SELECT 
+  customer_id,
+  name as categroy_name,
+  count(*) as rental_count
+FROM dvd_rentals.rental r LEFT JOIN dvd_rentals.inventory i 
+ON r.inventory_id = i.inventory_id 
+INNER JOIN dvd_rentals.film f 
+ON f.film_id = i.film_id 
+INNER JOIN dvd_rentals.film_category fc 
+ON fc.film_id = f.film_id 
+INNER JOIN dvd_rentals.category c
+ON c.category_id = fc.category_id
+GROUP BY 1,2
+ORDER BY 1, 3 DESC;
+```
+<br>
+
+#### 2. What is the frequency of values in the rating column in the film table? <br>
+
+* Frequency with **respect to each rating**, frequency = count(*) <br>
+
+
+```sql
+SELECT
+  rating,
+  COUNT(*) AS frequency
+FROM dvd_rentals.film_list
+GROUP BY rating
+ORDER BY 2 DESC;
+```
+<br>
+
+### Percentage logic - Percentage of records for each column
+#### 3. Adding a percentage column<br>
+
+* If I do not specify any argument in the **over** clause, the partition will be applied on the entire dataset
+* So every adjacent row will contain the entire sum of the columns: 997<br>
+<br>
+
+```sql
+select 
+  rating,
+  count(*) as frequency,
+  sum(count(*)) over() as sum_of_all,
+  round(100 * count(*) :: numeric / sum(count(*)) over(),2) as percentage
+from dvd_rentals.film_list
+group by 1
+order by 2 desc;
+```
+<br>

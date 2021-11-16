@@ -3,24 +3,31 @@
 # **Logic and Processes** for different cases
 
 
-#### 1. Query to find customer_id, category_name and rental count with respect to each cutomer id. <br>
+#### 1. Query to find top 2 customer_id, category_name and rental count with respect to each cutomer id. <br>
 
 
 ```sql
-SELECT 
-  customer_id,
-  name as categroy_name,
-  count(*) as rental_count
-FROM dvd_rentals.rental r LEFT JOIN dvd_rentals.inventory i 
-ON r.inventory_id = i.inventory_id 
-INNER JOIN dvd_rentals.film f 
-ON f.film_id = i.film_id 
-INNER JOIN dvd_rentals.film_category fc 
-ON fc.film_id = f.film_id 
-INNER JOIN dvd_rentals.category c
-ON c.category_id = fc.category_id
-GROUP BY 1,2
-ORDER BY 1, 3 DESC;
+select 
+  a.customer_id,
+  a.category_name,
+  a.rental_count
+  from
+  (SELECT 
+    customer_id,
+    name as category_name,
+    count(*) as rental_count,
+    dense_rank() over (partition by customer_id order by count(*) desc) rents
+  FROM dvd_rentals.rental r LEFT JOIN dvd_rentals.inventory i 
+  ON r.inventory_id = i.inventory_id 
+  INNER JOIN dvd_rentals.film f 
+  ON f.film_id = i.film_id 
+  INNER JOIN dvd_rentals.film_category fc 
+  ON fc.film_id = f.film_id 
+  INNER JOIN dvd_rentals.category c
+  ON c.category_id = fc.category_id
+  GROUP BY 1,2
+  ORDER BY 1, 3 DESC) a 
+where a.rents <3;
 ```
 <br>
 

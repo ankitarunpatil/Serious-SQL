@@ -3,7 +3,7 @@
 # **Logic and Processes** for different cases
 
 
-#### 1. Query to find rental counts, customer id, category name with respect to each customer with id= 1. <br>
+#### 1. Query to find rental_counts, customer_id, category_name for customer with id= 1. <br>
 
 ```sql
 SELECT 
@@ -21,6 +21,29 @@ ON fc.category_id = c.category_id
 WHERE r.customer_id = 1
 GROUP BY 1,2
 ORDER BY 3 DESC;
+```
+<br>
+
+
+#### 2. Query to find rental_counts, customer_id, category_name and film_names for customer with id= 1. <br>
+
+```sql
+SELECT 
+  r.customer_id,
+  c.name,
+  f.title,
+  count(*) as rental_count
+FROM dvd_rentals.rental r INNER JOIN dvd_rentals.inventory i 
+ON r.inventory_id = i.inventory_id 
+INNER JOIN dvd_rentals.film f 
+ON i.film_id = f.film_id 
+INNER JOIN dvd_rentals.film_category fc 
+ON f.film_id = fc.film_id 
+INNER JOIN dvd_rentals.category c 
+ON fc.category_id = c.category_id
+WHERE r.customer_id = 1
+GROUP BY 1,2,3
+ORDER BY 4 DESC;
 ```
 <br>
 

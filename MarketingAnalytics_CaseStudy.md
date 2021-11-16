@@ -10,6 +10,53 @@
 3. The number of foreign key values exists in each table.
 
 <br>
+
+## Asking key analytical questions
+1. How many records exists per foreign key value in left and right tables?
+2. How many overlapping and missing unique foreign key values are there between the two tables?
+
+<br>
+
+## Perform a simple count on records
+
+```sql
+SELECT 
+  count(*)
+FROM dvd_rentals.inventory;
+```
+
+```sql
+SELECT 
+  count(distinct inventory_id)
+FROM dvd_rentals.rental;
+```
+
+## Perform group by on the records (Aggregate the data twice to see the results)
+
+* We follow these 2 simple steps to summarise our dataset:
+1. Perform a GROUP BY record count on the target column
+2. Summarise the record count output to show the distribution of records by unique count of the target column
+
+<br>
+
+```sql
+with cte as 
+  (SELECT 
+    inventory_id,
+    count(*) as row_counts
+  FROM dvd_rentals.rental
+  GROUP BY 1)
+
+SELECT 
+  row_counts,
+  count(inventory_id) as inventory_ids
+FROM cte
+GROUP BY 1
+ORDER BY 1;
+```
+
+<br>
+
 #### 1. Query to find rental_counts, customer_id, category_name for customer with id= 1. <br>
 
 ```sql

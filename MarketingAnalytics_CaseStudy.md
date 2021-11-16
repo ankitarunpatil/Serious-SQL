@@ -2,7 +2,14 @@
 
 # **Logic and Processes** for different cases
 
+<br>
 
+## Deciding which type of table join to use ?
+1. Decide what is the purpose of joining tables.
+2. Check for distribution of foreign keys within each table.
+3. The number of foreign key values exists in each table.
+
+<br>
 #### 1. Query to find rental_counts, customer_id, category_name for customer with id= 1. <br>
 
 ```sql

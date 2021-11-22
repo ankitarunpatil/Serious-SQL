@@ -57,6 +57,136 @@ ORDER BY 1;
 
 <br>
 
+
+## Foreign key overlap analysis
+
+1. How many overlapping and missing unique foreign key values are there between the two tables?
+2. Which foreign keys only exist in the left table?
+3. Which foreign keys only exist in the right table?
+4. Further investigate if there are records.
+
+<br>
+
+```sql
+-- how many foreign keys exists only in the left table and not on the right 
+SELECT 
+  count(DISTINCT rental.inventory_id)
+FROM dvd_rentals.rental
+WHERE NOT EXISTS
+  (SELECT 
+    inventory_id
+  FROM dvd_rentals.inventory
+  WHERE rental.inventory_id = inventory.inventory_id);
+
+```
+
+<br>
+
+```sql
+
+--how many foreign keys exists only in the right table and not in the left table 
+SELECT 
+  count(DISTINCT inventory.inventory_id)
+FROM dvd_rentals.inventory
+WHERE NOT EXISTS
+  (SELECT 
+    rental_id
+  FROM dvd_rentals.rental
+  WHERE rental.inventory_id = inventory.inventory_id);
+
+```
+
+<br>
+
+#### Investigation
+
+<br>
+
+```sql
+SELECT 
+  count(DISTINCT inventory.inventory_id)
+FROM dvd_rentals.inventory
+WHERE NOT EXISTS
+  (SELECT 
+    rental_id
+  FROM dvd_rentals.rental
+  WHERE rental.inventory_id = inventory.inventory_id);
+
+
+```
+
+<br>
+
+#### We can quickly perform a left semi join or a WHERE EXISTS to get the count of unique foreign key values that are in the intersection.
+
+<br>
+
+```sql
+
+SELECT 
+  count(DISTINCT rental.inventory_id)
+FROM dvd_rentals.rental
+WHERE EXISTS
+  (SELECT 
+    inventory.inventory_id
+  FROM dvd_rentals.inventory
+  WHERE rental.inventory_id = inventory.inventory_id);
+
+```
+
+<br>
+
+
+### Implementing the joins 
+
+<br>
+
+* Use left join and also inner join to find the record counts and check if they match
+
+<br>
+
+```sql
+DROP TABLE IF EXISTS left_rental_join;
+CREATE TEMP TABLE left_rental_join AS 
+SELECT 
+  r.customer_id,
+  r.inventory_id,
+  i.film_id
+FROM dvd_rentals.rental r 
+LEFT JOIN dvd_rentals.inventory i 
+ON r.inventory_id = i.inventory_id;
+
+DROP TABLE IF EXISTS inner_rental_join;
+CREATE TEMP TABLE inner_rental_join as 
+SELECT 
+  r.customer_id,
+  r.inventory_id,
+  i.film_id
+FROM dvd_rentals.rental r 
+INNER JOIN dvd_rentals.inventory i 
+ON r.inventory_id = i.inventory_id; 
+
+
+-- check counts for each output 
+
+(SELECT 
+  'left join' as join_type,
+  count(*) as record_count,
+  count(DISTINCT inventory_id) as unique_key_values
+FROM left_rental_join)
+
+UNION 
+
+(SELECT
+  'inner join' as join_type,
+  count(*) as record_count,
+  count(DISTINCT inventory_id) as unique_key_values
+FROM inner_rental_join);
+
+```
+
+<br>
+
 #### 1. Query to find rental_counts, customer_id, category_name for customer with id= 1. <br>
 
 ```sql

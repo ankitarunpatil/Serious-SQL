@@ -189,14 +189,185 @@ FROM inner_rental_join);
 
 ## Problem 
 
-We have been asked by the DVD Rental Co marketing team to generate analytical inputs for theoir customer marketing campaign.
-The needs to send out personalised emails.
-Main initiative - Each customer's viewing behaviour
-Key statiistics: Each customers's top 2 categories and favorite actor.
-There are also 3 personalised recommendations base off each customer's previous viewing history.
+* We have been asked by the DVD Rental Co marketing team to generate analytical inputs for theoir customer marketing campaign.
+* The needs to send out personalised emails.
+* Main initiative - Each customer's viewing behaviour
+* Key statiistics: Each customers's top 2 categories and favorite actor.
+* There are also 3 personalised recommendations base off each customer's previous viewing history.
 
 
-## Solution
+## Category Insights
+
+* Top Category:
+1. What was the top category watched by total rental count?
+2. How many total films have they watched in their top category and how does it compare to the DVD Rental Co customer base?
+3. How many more films has the customer watched compared to the average DVD Rental Co customer?
+4. How does the customer rank in terms of the top X% compared to all other customers in this film category?
+5. What are the top 3 film recommendations in the top category ranked by total customer rental count which the customer has not seen before?
+
+* Second Category
+1. What is the second ranking category by total rental count?
+2. What proportion of each customer’s total films watched does this count make?
+3. What are top 3 recommendations for the second category which the customer has not yet seen before?
+
+* Actor Insights 
+1. Which actor has featured in the customer’s rental history the most?
+2. How many films featuring this actor has been watched by the customer?
+3. What are the top 3 recommendations featuring this same actor which have not been watched by the customer?
+ 
+
+## Join Column Analysis 1
+
+1. Perform an anti join to check which column values exist in ```dvd_rentals.rental``` but not in ```dvd_rentals.inventory```
+
+```sql
+-- left table
+
+SELECT 
+  count(DISTINCT rental.inventory_id)
+FROM dvd_rentals.rental
+WHERE NOT EXISTS
+  (SELECT
+    inventory_id
+  FROM dvd_rentals.inventory
+  WHERE rental.inventory_id = inventory.inventory_id);
+  
+-- right table : count of this is 1 - hence then further investigate this count
+
+SELECT 
+  count(DISTINCT inventory.inventory_id)
+FROM dvd_rentals.inventory
+WHERE NOT EXISTS
+  (SELECT 
+    inventory_id
+  FROM dvd_rentals.rental
+  WHERE rental.inventory_id = inventory.inventory_id);
+  
+
+-- Investigation
+
+SELECT 
+  *
+FROM dvd_rentals.inventory
+WHERE NOT EXISTS
+  (SELECT 
+    inventory_id
+  FROM dvd_rentals.rental
+  WHERE rental.inventory_id = inventory.inventory_id);
+
+```
+
+* In the above analysis we can conclude that some inventory might just never be rented out to customers at the retail rental store.
+* We have no issues with this 
+
+* Let us confirm that both eft and inner joins do not differ
+
+```sql
+-- Checking both left and right join counts 
+
+DROP TABLE IF EXISTS left_rental_join;
+CREATE TEMP TABLE left_rental_join AS 
+(SELECT 
+  r.customer_id,
+  r.inventory_id,
+  i.film_id
+FROM dvd_rentals.rental r 
+LEFT JOIN dvd_rentals.inventory i 
+ON r.inventory_id = i.inventory_id);
+
+
+DROP TABLE IF EXISTS inner_rental_join;
+CREATE TEMP TABLE inner_rental_join AS 
+(SELECT 
+  r.customer_id,
+  r.inventory_id,
+  i.film_id
+FROM dvd_rentals.rental r 
+INNER JOIN dvd_rentals.inventory i 
+ON r.inventory_id = i.inventory_id);
+
+
+-- output
+
+(
+SELECT 
+  'left join' as join_type,
+  count(*) as record_count,
+  count(DISTINCT inventory_id) as unique_key_values
+FROM left_rental_join
+)
+UNION 
+(
+SELECT 
+  'inner join' as join_type,
+  count(*) as record_count,
+  count(DISTINCT inventory_id) as unique_key_values
+FROM inner_rental_join
+);
+
+
+```
+
+* We can perform the same analysis for all of the tables and conclude the distributions of join keys are as expected and are similar to first 2 tables
+
+## Join Column Analysis 2
+
+* Investigating the relationship between ```actor_id``` and ```film_id columns``` within the dvd_rentals.film_actor table
+
+1. An actor might show up in different films and a film can have multiple actors 
+2. Hence, we can conclude that film and actor will have many to many relationship.
+
+```sql
+
+-- Join analysis 2 
+
+WITH actor_film_counts AS 
+  (SELECT 
+    actor_id,
+    count(DISTINCT film_id) as film_count
+  FROM dvd_rentals.film_actor
+  GROUP BY 1)
+
+SELECT 
+  film_count,
+  count(*) as total_actors
+FROM actor_film_counts
+GROUP BY 1
+ORDER BY 1 DESC
+;
+
+-- Also confirm there are multiple actors per film
+
+WITH film_actor_count AS 
+  (SELECT 
+  film_id,
+  count(DISTINCT actor_id) as actor_count
+  FROM dvd_rentals.film_actor
+  GROUP BY 1)
+SELECT 
+  actor_count,
+  count(*) as total_films
+FROM film_actor_count
+GROUP BY 1
+ORDER BY 1 DESC;
+
+```
+
+* In conclusion - we can see that there is indeed a many to many relationship of the ```film_id``` and the ```actor_id``` columns within the ```dvd_rentals.film_actor``` table so we must take extreme care when we are joining these 2 tables as part of our analysis
+
+## Solution Plan
+
+* Category Insights 
+
+1. Create a base dataset and join all relevant tables ```complete_joint_dataset```
+2. Calculate customer rental counts for each category ```category_counts```
+3. Aggregate all customer total films watched ```total_counts```
+4. Identify the top 2 categories for each customer ```top_categories```
+5. Calculate each category’s aggregated average rental count ```average_category_count```
+6. Calculate the percentile metric for each customer’s top category film count ```top_category_percentile```
+7. Generate our first top category insights table using all previously generated tables ```top_category_insights```
+8. Generate the 2nd category insights ```second_category_insights```
+
 
 <br>
 
@@ -220,6 +391,134 @@ INNER JOIN dvd_rentals.film_category fc
 ON f.film_id = fc.film_id 
 INNER JOIN dvd_rentals.category c 
 ON fc.category_id = c.category_id;
+
+```
+
+### Creating category counts 
+
+```sql
+DROP TABLE IF EXISTS category_counts;
+CREATE TEMP TABLE category_counts AS 
+SELECT 
+  customer_id,
+  category_name,
+  count(*) as rental_count,
+  max(rental_date) as latest_rental_date
+FROM complete_join_dataset
+GROUP BY 1,2;
+
+--- Checking counts 
+
+SELECT 
+  *
+FROM category_counts
+WHERE customer_id = 1 
+ORDER BY rental_count DESC, latest_rental_date DESC;
+
+```
+
+## Creating total counts 
+
+```sql
+DROP TABLE IF EXISTS total_counts;
+CREATE TEMP TABLE total_counts AS 
+SELECT 
+  customer_id,
+  sum(rental_count)
+FROM category_counts
+GROUP BY 1;
+
+SELECT 
+  *
+FROM total_counts
+LIMIT 5;
+
+```
+
+## Creating TOP Categories 
+
+```sql
+
+DROP TABLE IF EXISTS top_categories;
+CREATE TEMP TABLE top_categories AS 
+WITH ranked_cte AS (
+  SELECT 
+    customer_id,
+    category_name,
+    rental_count,
+    DENSE_RANK() OVER (PARTITION BY customer_id
+                      ORDER BY rental_count DESC,
+                      latest_rental_date DESC,
+                      category_name) 
+                      AS category_rank
+  FROM category_counts
+)
+SELECT 
+  *
+FROM ranked_cte
+where category_rank <=2;
+
+```
+
+
+### Creating average category count
+
+
+```sql
+
+DROP TABLE IF EXISTS average_category_counts;
+CREATE TEMP TABLE average_category_counts AS 
+SELECT 
+  category_name,
+  FLOOR(AVG(rental_count)) as category_average
+FROM category_counts
+GROUP BY 1;
+
+```
+
+
+### Top Category Perentile
+
+```sql
+
+DROP TABLE IF EXISTS top_category_percentile;
+CREATE TEMP TABLE top_category_percentile AS 
+WITH calculated_cte AS(
+  SELECT 
+    t.customer_id,
+    t.category_name as top_category_name,
+    t.rental_count,
+    c.category_name,
+    t.category_rank,
+    PERCENT_RANK() OVER(PARTITION BY c.category_name
+                        ORDER BY c.rental_count DESC)
+                        AS raw_percentile_value
+  FROM category_counts c 
+  LEFT JOIN top_categories t 
+  on c.customer_id = t.customer_id 
+)
+SELECT 
+  customer_id,
+  category_name,
+  rental_count,
+  category_rank,
+  CASE 
+    WHEN ROUND(100* raw_percentile_value) = 0 THEN 1
+    ELSE ROUND(100* raw_percentile_value)
+  END AS percentile
+FROM calculated_cte
+WHERE category_rank = 1 
+AND top_category_name = category_name;
+
+
+```
+
+
+### Category Insights 
+
+```sql
+
+
 
 ```
 

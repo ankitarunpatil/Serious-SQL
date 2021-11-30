@@ -187,6 +187,36 @@ FROM inner_rental_join);
 
 <br>
 
+## Solution
+
+<br>
+
+### Creating base table 
+
+```sql
+DROP TABLE IF EXISTS complete_join_dataset;
+CREATE TEMP TABLE complete_join_dataset AS 
+SELECT
+  r.customer_id,
+  i.film_id,
+  f.title,
+  c.name as category_name,
+  r.rental_date
+FROM dvd_rentals.rental r 
+INNER JOIN dvd_rentals.inventory i 
+ON r.inventory_id = i.inventory_id 
+INNER JOIN dvd_rentals.film f 
+ON f.film_id = i.film_id 
+INNER JOIN dvd_rentals.film_category fc 
+ON f.film_id = fc.film_id 
+INNER JOIN dvd_rentals.category c 
+ON fc.category_id = c.category_id;
+
+```
+
+
+<br>
+
 #### 1. Query to find rental_counts, customer_id, category_name for customer with id= 1. <br>
 
 ```sql

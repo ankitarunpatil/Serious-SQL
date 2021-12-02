@@ -1,14 +1,14 @@
 
-# Marketing Analytics - PEAR
+# **Marketing Analytics - PEAR**
 
-#### PEAR
+## **PEAR**
   * P - Problem
   * E - Exploration
   * A - Analysis
   * R - Result
 
 
-## Problem 
+## **Problem**
 
 * We have been asked by the DVD Rental Co marketing team to generate analytical inputs for their customer marketing campaign.
 * They want to send out personalised emails to every customer.
@@ -17,9 +17,8 @@
 * There are also 3 personalised recommendations based off each customer's previous viewing history.
 
 
-<br>
-
 ## Email Tempelate for presonalised recommendations 
+
 <br>
 <p align="center">
   <img width="602" height="775" src="MarketingAnalytics/Template1.png">
@@ -29,19 +28,19 @@
 
 ## Category Insights
 
-* Top Category:
+#### Top Category:
 1. What was the top category watched by total rental count?
 2. How many total films have they watched in their top category and how does it compare to the DVD Rental Co customer base?
 3. How many more films has the customer watched compared to the average DVD Rental Co customer?
 4. How does the customer rank in terms of the top X% compared to all other customers in this film category?
 5. What are the top 3 film recommendations in the top category ranked by total customer rental count which the customer has not seen before?
 
-* Second Category
+#### Second Category
 1. What is the second ranking category by total rental count?
 2. What proportion of each customer’s total films watched does this count make?
 3. What are top 3 recommendations for the second category which the customer has not yet seen before?
 
-* Actor Insights 
+#### Actor Insights 
 1. Which actor has featured in the customer’s rental history the most?
 2. How many films featuring this actor has been watched by the customer?
 3. What are the top 3 recommendations featuring this same actor which have not been watched by the customer?

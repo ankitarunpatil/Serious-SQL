@@ -106,6 +106,7 @@ WHERE NOT EXISTS
 
 * In the above analysis we can conclude that some inventory might just never be rented out to customers at the retail rental store.
 * We have no issues with this 
+<br>
 
   4. Last step is to confirm both left and inner joins have the same row counts
 
@@ -155,5 +156,54 @@ FROM inner_rental_join
 
 
 ```
+
+
+  5. We also need to investigate the relationships between the ```actor_id``` and ```film_id``` columns within the ```dvd_rentals.film_actor``` table.
+
+<br>
+
+* An actor might show up in different films and a film can have multiple actors 
+* Hence, we can conclude that film and actor will have many to many relationship.
+
+```sql
+
+-- Join analysis 2 
+
+WITH actor_film_counts AS 
+  (SELECT 
+    actor_id,
+    count(DISTINCT film_id) as film_count
+  FROM dvd_rentals.film_actor
+  GROUP BY 1)
+
+SELECT 
+  film_count,
+  count(*) as total_actors
+FROM actor_film_counts
+GROUP BY 1
+ORDER BY 1 DESC
+;
+
+-- Also confirm there are multiple actors per film
+
+WITH film_actor_count AS 
+  (SELECT 
+  film_id,
+  count(DISTINCT actor_id) as actor_count
+  FROM dvd_rentals.film_actor
+  GROUP BY 1)
+SELECT 
+  actor_count,
+  count(*) as total_films
+FROM film_actor_count
+GROUP BY 1
+ORDER BY 1 DESC;
+
+
+```
+
+<br>
+
+* In conclusion - we can see that there is indeed a many to many relationship of the ```film_id``` and the ```actor_id``` columns within the ```dvd_rentals.film_actor``` table so we must take extreme care when we are joining these 2 tables as part of our analysis
 
 

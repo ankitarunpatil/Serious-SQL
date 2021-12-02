@@ -1,11 +1,11 @@
 
 # **Marketing Analytics - PEAR**
 
-## **PEAR**
-  * P - Problem
-  * E - Exploration
-  * A - Analysis
-  * R - Result
+## PEAR
+  - P - Problem
+  - E - Exploration
+  - A - Analysis
+  - R - Result
 
 
 ## **Problem**
@@ -58,7 +58,7 @@
 
 ## Exploration
 
-  1. Perform an anti join to check which column values exist in ```dvd_rentals.rental``` but not in ```dvd_rentals.inventory```
+  1. Perform an anti join to check which column values exist in ```dvd_rentals.rental``` but not in ```dvd_rentals.inventory``` <br>
 
 ```sql
 -- left table
@@ -71,11 +71,20 @@ WHERE NOT EXISTS
     inventory_id
   FROM dvd_rentals.inventory
   WHERE rental.inventory_id = inventory.inventory_id);
+  
 ```
+<br>
 
-  2. Checking the right table using the same process: ```dvd_rentals.inventory```
+| count  |
+| ------:|
+|0|
+
+<br>
+
+  2. Checking the right table using the same process: ```dvd_rentals.inventory``` <br>
 
 ```sql
+--- right table
 
 SELECT 
   count(DISTINCT inventory.inventory_id)
@@ -87,6 +96,13 @@ WHERE NOT EXISTS
   WHERE rental.inventory_id = inventory.inventory_id);
 
 ```
+<br>
+
+| count  |
+| ------:|
+|1|
+
+<br>
 
   3. In the above analysis, we find that a single value is not showing up - hence, let's investigate
 

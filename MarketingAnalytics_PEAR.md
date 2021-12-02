@@ -58,7 +58,7 @@
 
 ## Exploration
 
-  1. Perform an anti join to check which column values exist in ```dvd_rentals.rental``` but not in ```dvd_rentals.inventory``` <br>
+1. Perform an anti join to check which column values exist in ```dvd_rentals.rental``` but not in ```dvd_rentals.inventory``` <br>
 
 ```sql
 -- left table
@@ -81,7 +81,7 @@ WHERE NOT EXISTS
 
 <br>
 
-  2. Checking the right table using the same process: ```dvd_rentals.inventory``` <br>
+2. Checking the right table using the same process: ```dvd_rentals.inventory``` <br>
 
 ```sql
 --- right table
@@ -104,7 +104,7 @@ WHERE NOT EXISTS
 
 <br>
 
-  3. In the above analysis, we find that a single value is not showing up - hence, let's investigate <br>
+3. In the above analysis, we find that a single value is not showing up - hence, let's investigate <br>
 
 ```sql
 
@@ -132,7 +132,7 @@ WHERE NOT EXISTS
 
 <br>
 
-  4. Last step is to confirm both left and inner joins have the same row counts <br>
+4. Last step is to confirm both left and inner joins have the same row counts <br>
 
 ```sql
 
@@ -183,12 +183,19 @@ FROM inner_rental_join
 
 <br>
 
-  5. We also need to investigate the relationships between the ```actor_id``` and ```film_id``` columns within the ```dvd_rentals.film_actor``` table.
+
+| join_type	| record_count	| unique_key_values  |
+| :---:| :---:| :---:|
+|inner  join	| 16044	| 4580|
+| left join	| 16044	| 4580
 
 <br>
 
+5. We also need to investigate the relationships between the ```actor_id``` and ```film_id``` columns within the ```dvd_rentals.film_actor``` table. <br>
+
+
 * An actor might show up in different films and a film can have multiple actors 
-* Hence, we can conclude that film and actor will have many to many relationship.
+* Hence, we can conclude that film and actor will have many to many relationship. <br>
 
 ```sql
 

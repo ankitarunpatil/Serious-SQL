@@ -207,3 +207,197 @@ ORDER BY 1 DESC;
 * In conclusion - we can see that there is indeed a many to many relationship of the ```film_id``` and the ```actor_id``` columns within the ```dvd_rentals.film_actor``` table so we must take extreme care when we are joining these 2 tables as part of our analysis
 
 
+## Analysis
+
+
+### Solution Plan
+
+#### Category Insights
+
+1. Create a base dataset and join all relevant tables ```complete_joint_dataset```
+2. Calculate customer rental counts for each category ```category_counts```
+3. Aggregate all customer total films watched ```total_counts```
+4. Identify the top 2 categories for each customer ```top_categories```
+5. Calculate each category’s aggregated average rental count ```average_category_count```
+6. Calculate the percentile metric for each customer’s top category film count ```top_category_percentile```
+7. Generate our first top category insights table using all previously generated tables ```top_category_insights```
+8. Generate the 2nd category insights ```second_category_insights```
+
+
+1. Creating Base table:
+    This table joins multiple tables together after the analysis of different relationships between tables.
+    ```rental_date``` is taken into account to prioritize film categories which were most recently viewed.
+
+```sql
+DROP TABLE IF EXISTS complete_join_dataset;
+CREATE TEMP TABLE complete_join_dataset AS 
+SELECT
+  r.customer_id,
+  i.film_id,
+  f.title,
+  c.name as category_name,
+  r.rental_date
+FROM dvd_rentals.rental r 
+INNER JOIN dvd_rentals.inventory i 
+ON r.inventory_id = i.inventory_id 
+INNER JOIN dvd_rentals.film f 
+ON f.film_id = i.film_id 
+INNER JOIN dvd_rentals.film_category fc 
+ON f.film_id = fc.film_id 
+INNER JOIN dvd_rentals.category c 
+ON fc.category_id = c.category_id;
+
+```
+
+2. Creating Category Counts 
+   This is a follow up aggregated table that uses ```complete_join_dataset``` to aggregate data based on ```customer_id``` and ```category_name``` to generate a ```rental_count``` based on latest ```rental_date```.
+
+```sql
+DROP TABLE IF EXISTS category_counts;
+CREATE TEMP TABLE category_counts AS 
+SELECT 
+  customer_id,
+  category_name,
+  count(*) as rental_count,
+  max(rental_date) as latest_rental_date
+FROM complete_join_dataset
+GROUP BY 1,2;
+
+```
+
+3. Creating Total Counts 
+   To generate ```total_counts``` the above ```category_counts``` table is used.
+
+```sql
+DROP TABLE IF EXISTS total_counts;
+CREATE TEMP TABLE total_counts AS 
+SELECT 
+  customer_id,
+  sum(rental_count) as total_count
+FROM category_counts
+GROUP BY 1;
+
+```
+
+4. Creating TOP Categories 
+   Selecting top 2 categories with respect to each customer, and ordering them by descending order of rental date and rental count, so that we get most recent and most watched films.
+
+```sql 
+DROP TABLE IF EXISTS top_categories;
+CREATE TEMP TABLE top_categories AS 
+WITH ranked_cte AS (
+  SELECT 
+    customer_id,
+    category_name,
+    rental_count,
+    DENSE_RANK() OVER (PARTITION BY customer_id
+                      ORDER BY rental_count DESC,
+                      latest_rental_date DESC,
+                      category_name) 
+                      AS category_rank
+  FROM category_counts
+)
+SELECT 
+  *
+FROM ranked_cte
+where category_rank <=2;
+
+```
+
+5. Creating Average Category Counts
+
+   Using the ```category_counts``` table we can find the average category count for each category.
+   Rounding off to the nearest integer using ```FLOOR``` function.
+   
+```sql
+
+DROP TABLE IF EXISTS average_category_counts;
+CREATE TEMP TABLE average_category_counts AS 
+SELECT 
+  category_name,
+  FLOOR(AVG(rental_count)) as category_average
+FROM category_counts
+GROUP BY 1;
+
+```
+
+
+6. TOP Category Percentile 
+
+   To find the top category percentile we will be needing ```category_counts``` and ```top_categories```.
+   i.e. comparing each customer's top category ```rental_count``` to all other DVD Rental Co customers.
+   Here, ```PERCENT_RANK``` window funtion is used.
+   
+```sql
+
+DROP TABLE IF EXISTS top_category_percentile;
+CREATE TEMP TABLE top_category_percentile AS 
+WITH calculated_cte AS(
+  SELECT 
+    t.customer_id,
+    t.category_name as top_category_name,
+    t.rental_count,
+    c.category_name,
+    t.category_rank,
+    PERCENT_RANK() OVER(PARTITION BY c.category_name
+                        ORDER BY c.rental_count DESC)
+                        AS raw_percentile_value
+  FROM category_counts c 
+  LEFT JOIN top_categories t 
+  on c.customer_id = t.customer_id 
+)
+SELECT 
+  customer_id,
+  category_name,
+  rental_count,
+  category_rank,
+  CASE 
+    WHEN ROUND(100* raw_percentile_value) = 0 THEN 1
+    ELSE ROUND(100* raw_percentile_value)
+  END AS percentile
+FROM calculated_cte
+WHERE category_rank = 1 
+AND top_category_name = category_name;
+
+```
+
+
+7. 1st Category Insights
+   Combining all tables to get category insights.
+   
+```sql
+
+DROP TABLE IF EXISTS first_category_insights;
+CREATE TEMP TABLE first_category_insights AS 
+SELECT 
+  base.customer_id,
+  base.category_name,
+  base.rental_count,
+  base.rental_count - average.category_average as average_comparison,
+  base.percentile
+FROM top_category_percentile as base 
+LEFT JOIN average_category_counts as average 
+ON base.category_name = average.category_name;
+
+```
+
+
+8. 2nd Category Insights
+   This insight is obtained by using ```top_categories``` and ```total_counts``` tables.
+
+```sql
+
+DROP TABLE IF EXISTS second_category_insights;
+CREATE TEMP TABLE second_category_insights AS 
+SELECT 
+  t.customer_id,
+  t.category_name,
+  t.rental_count,
+  ROUND(100* t.rental_count::NUMERIC/tc.total_count) AS total_percentage
+FROM top_categories t 
+LEFT JOIN total_counts tc 
+ON t.customer_id = tc.customer_id 
+where category_rank = 2;
+
+```
+

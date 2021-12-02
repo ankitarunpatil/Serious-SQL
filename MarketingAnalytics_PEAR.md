@@ -76,7 +76,7 @@ WHERE NOT EXISTS
 <br>
 
 | count  |
-| ------:|
+| :----:|
 |0|
 
 <br>
@@ -99,12 +99,12 @@ WHERE NOT EXISTS
 <br>
 
 | count  |
-| ------:|
+| :---:|
 |1|
 
 <br>
 
-  3. In the above analysis, we find that a single value is not showing up - hence, let's investigate
+  3. In the above analysis, we find that a single value is not showing up - hence, let's investigate <br>
 
 ```sql
 
@@ -119,11 +119,20 @@ WHERE NOT EXISTS
 
 ```
 
-* In the above analysis we can conclude that some inventory might just never be rented out to customers at the retail rental store.
-* We have no issues with this 
 <br>
 
-  4. Last step is to confirm both left and inner joins have the same row counts
+| inventory_id	| film_id	| store_id	| last_update  |
+| :---:| :---:| :---:| :---:|
+|5	|1	|2	|2006-02-15 05:09:17|
+
+<br>
+
+* In the above analysis we can conclude that some inventory might just never be rented out to customers at the retail rental store.
+* We have no issues with this 
+
+<br>
+
+  4. Last step is to confirm both left and inner joins have the same row counts <br>
 
 ```sql
 
@@ -172,6 +181,7 @@ FROM inner_rental_join
 
 ```
 
+<br>
 
   5. We also need to investigate the relationships between the ```actor_id``` and ```film_id``` columns within the ```dvd_rentals.film_actor``` table.
 

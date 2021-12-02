@@ -401,3 +401,361 @@ where category_rank = 2;
 
 ```
 
+### Category Recommendations 
+
+1. Creating Film Counts 
+   Create an aggregate base table form ```complete_joint_dataset``` based on ```film_id``` and ```title```
+   
+```sql
+
+DROP TABLE IF EXISTS film_counts;
+CREATE TEMP TABLE film_counts AS 
+SELECT DISTINCT
+  film_id,
+  title,
+  category_name,
+  count(*) OVER (PARTITION BY film_id) as rental_count
+FROM complete_join_dataset;
+
+```
+
+2. Creating Category Film Exclusions
+   Generate a table with all of our customer’s previously watched films so we don’t recommend them something which they’ve already seen before.
+   
+```sql
+
+DROP TABLE IF EXISTS category_film_exclusions;
+CREATE TEMP TABLE category_film_exclusions AS 
+SELECT DISTINCT
+  customer_id,
+  film_id
+FROM complete_join_dataset;
+
+```
+
+
+3. Final Category Recommendations 
+   Perform ```ANTI JOIN``` on ```category_film_exclusion``` for the top 2 categories found in ```top_categories```.
+
+
+```sql
+
+DROP TABLE IF EXISTS category_recommendations;
+CREATE TEMP TABLE category_recommendations AS 
+with ranked_films_cte AS( 
+  SELECT 
+    t.customer_id,
+    t.category_name,t.category_rank,
+    f.film_id,
+    f.title,
+    f.rental_count,
+    DENSE_RANK() OVER (PARTITION BY t.customer_id, t.category_rank
+                        ORDER BY f.rental_count DESC,
+                        f.title) as reco_rank
+  FROM top_categories t 
+  INNER JOIN film_counts f 
+  ON t.category_name = f.category_name
+  WHERE NOT EXISTS
+  (
+    SELECT 1
+    FROM category_film_exclusions c
+    WHERE c.customer_id = t.customer_id AND 
+    c.film_id = f.film_id
+  )
+)
+SELECT 
+  *
+FROM ranked_films_cte
+WHERE reco_rank <=3;
+
+```
+
+
+### Actor Insights
+
+1. Creating Actor Joint Table 
+   We will need to create a new base table ```actor_joint_table``` as we have to introduce ```dvd_rentals.film_actor``` and ```dvd_rentals.actor```.
+   
+   
+```sql
+
+DROP TABLE IF EXISTS actor_joint_dataset;
+CREATE TEMP TABLE actor_joint_dataset AS 
+SELECT 
+  r.customer_id,
+  r.rental_id,
+  r.rental_date,
+  f.film_id,
+  f.title,
+  ac.actor_id,
+  ac.first_name,
+  ac.last_name
+FROM dvd_rentals.rental r 
+INNER JOIN dvd_rentals.inventory i 
+ON r.inventory_id = i.inventory_id 
+INNER JOIN dvd_rentals.film f 
+ON i.film_id = f.film_id 
+INNER JOIN dvd_rentals.film_actor a 
+ON f.film_id = a.film_id 
+INNER JOIN dvd_rentals.actor ac 
+ON a.actor_id = ac.actor_id;
+
+```
+
+
+2. Creating TOP Actor counts 
+   Aggregating rental counts per actor.
+   
+```sql
+
+DROP TABLE IF EXISTS top_actor_count;
+CREATE TEMP TABLE top_actor_count AS 
+with actor_counts AS   
+  (SELECT 
+    customer_id,
+    actor_id,
+    first_name,
+    last_name,
+    COUNT(*) as rental_count,
+    MAX(rental_date) as latest_rental_date
+  FROM actor_joint_dataset
+  GROUP BY 1,2,3,4),
+ranked_actor_counts AS 
+  (
+  SELECT 
+    actor_counts.*,
+    DENSE_RANK() OVER (PARTITION BY customer_id 
+                        ORDER BY rental_count DESC,
+                        latest_rental_date DESC,
+                        first_name,
+                        last_name) as actor_rank
+  FROM actor_counts
+  )
+SELECT 
+  customer_id,
+  actor_id,
+  first_name,
+  last_name,
+  rental_count
+FROM ranked_actor_counts
+WHERE actor_rank = 1;
+
+
+```
+
+
+### Actor Recommendations 
+
+1. Actor Film Counts 
+   Generate aggregated total rental counts across all customers by ```actor_id``` and ```film_id``` so we can join onto our ```top_actor_counts``` table
+   
+```sql
+
+DROP TABLE IF EXISTS actor_film_counts;
+CREATE TEMP TABLE actor_film_counts AS 
+with film_counts AS
+  (
+    SELECT 
+    film_id,
+    COUNT(DISTINCT rental_id) AS rental_count
+    FROM actor_joint_dataset
+    GROUP BY 1
+  )
+SELECT DISTINCT 
+  a.film_id,
+  a.actor_id,
+  a.title,
+  film_counts.rental_count
+FROM actor_joint_dataset a 
+LEFT JOIN film_counts 
+ON a.film_id = film_counts.film_id;
+
+```
+
+2. Actor Film Exclusions 
+    Customers would not want to receive a recommendation for the same film twice in the same email!
+
+```sql
+
+DROP TABLE IF EXISTS actor_film_exclusions;
+CREATE TEMP TABLE actor_film_exclusions AS 
+(
+  SELECT 
+    customer_id,
+    film_id
+  FROM complete_join_dataset
+)
+UNION 
+(
+  SELECT 
+    customer_id,
+    film_id
+  FROM category_recommendations
+);
+
+```
+
+
+3. Final Actor Recommendations
+   Same as Category Insights
+
+
+```sql
+
+DROP TABLE IF EXISTS actor_recommendations;
+CREATE TEMP TABLE actor_recommendations AS 
+with ranked_actor_films_cte AS 
+  (SELECT 
+    t.customer_id,
+    t.first_name,
+    t.last_name,
+    t.rental_count,
+    a.title,
+    a.film_id,
+    a.actor_id,
+    DENSE_RANK() OVER (PARTITION BY t.customer_id 
+                        ORDER BY a.rental_count DESC,
+                        a.title) as reco_rank
+  FROM top_actor_count t 
+  INNER JOIN actor_film_counts a 
+  ON t.actor_id = a.actor_id 
+  WHERE NOT EXISTS(
+                    SELECT 1
+                    FROM actor_film_exclusions af 
+                    WHERE af.customer_id = t.customer_id 
+                    AND af.film_id =  a.film_id
+                    
+                  )
+  )
+SELECT 
+  *
+FROM ranked_actor_films_cte
+WHERE reco_rank <=3;
+
+
+```
+
+
+## Final Transformation 
+
+
+```sql
+
+DROP TABLE IF EXISTS final_data_asset;
+CREATE TEMP TABLE final_data_asset AS 
+with first_category AS
+(
+  SELECT 
+    customer_id,
+    category_name,
+    CONCAT
+    (
+      'You''ve watched ', rental_count, ' ',category_name,
+      'films, that''s ', average_comparison,
+      ' more than the DVD REntal Co average and puts you in the top ',
+      percentile, '% of', category_name, ' gurus!'
+    ) AS insight
+  FROM first_category_insights
+),
+second_category AS 
+(
+  SELECT
+    customer_id,
+    category_name,
+    CONCAT
+    (
+      'You''ve watched ', rental_count, ' ',category_name,
+      ' films making up', total_percentage,
+      '% of your entire viewing history!'
+    ) AS insight
+  FROM second_category_insights
+),
+top_actor AS 
+(
+  SELECT 
+    customer_id,
+    CONCAT(INITCAP(first_name), ' ', INITCAP(last_name)) AS actor_name,
+    CONCAT
+    (
+      'You''ve watched ', rental_count, ' films featuring',
+      INITCAP(first_name), ' ', INITCAP(last_name),
+      '! Here are some other films ', INITCAP(first_name),
+      ' stars in that might interest you!'
+    ) AS insight
+  FROM top_actor_count
+),
+adjusted_title_case_category_recommendations AS 
+(
+  SELECT 
+    customer_id,
+    INITCAP(title) as title,
+    category_rank,
+    reco_rank
+  FROM category_recommendations
+),
+wide_category_recommendations AS 
+(
+  SELECT 
+    customer_id,
+    MAX(CASE WHEN category_rank = 1 and reco_rank = 1 THEN title END) AS cat1_reco1,
+    MAX(CASE WHEN category_rank = 1 and reco_rank = 2 THEN title END) AS cat1_reco2,
+    MAX(CASE WHEN category_rank = 1 and reco_rank = 3 THEN title END) AS cat1_reco3,
+    MAX(CASE WHEN category_rank = 2 and reco_rank = 1 THEN title END) AS cat2_reco1,
+    MAX(CASE WHEN category_rank = 2 and reco_rank = 2 THEN title END) AS cat2_reco2,
+    MAX(CASE WHEN category_rank = 2 and reco_rank = 2 THEN title END) AS cat2_reco3
+  FROM adjusted_title_case_category_recommendations
+  GROUP BY customer_id
+),
+adjusted_title_case_actor_recommendations AS 
+(
+  SELECT 
+    customer_id,
+    INITCAP(title) as title,
+    reco_rank
+  FROM actor_recommendations
+),
+wide_actor_recommendations AS 
+(
+  SELECT 
+    customer_id,
+    MAX(CASE WHEN reco_rank = 1 THEN title END) AS actor_reco1,
+    MAX(CASE WHEN reco_rank = 2 THEN title END) AS actor_reco2,
+    MAX(CASE WHEN reco_rank = 2 THEN title END) AS actor_reco3
+  FROM adjusted_title_case_actor_recommendations
+  GROUP BY 1
+),
+final_output AS 
+(
+  SELECT 
+    t1.customer_id,
+    t1.category_name AS cat_1,
+    t4.cat1_reco1,
+    t4.cat1_reco2,
+    t4.cat1_reco3,
+    t2.category_name AS cat2,
+    t4.cat2_reco1,
+    t4.cat2_reco2,
+    t4.cat2_reco3,
+    t3.actor_name as actor,
+    t5.actor_reco1,
+    t5.actor_reco2,
+    t5.actor_reco3,
+    t1.insight AS insight_cat1,
+    t2.insight AS insight_cat2,
+    t3.insight AS insight_actor
+  FROM first_category as t1 
+  INNER JOIN second_category as t2 
+  ON t1.customer_id = t2.customer_id
+  INNER JOIN top_actor t3 
+  ON t1.customer_id = t3.customer_id 
+  INNER JOIN wide_category_recommendations t4 
+  ON t1.customer_id = t4.customer_id 
+  INNER JOIN wide_actor_recommendations t5 
+  ON t1.customer_id = t5.customer_id 
+)
+SELECT 
+  * 
+FROM final_output; 
+
+
+```

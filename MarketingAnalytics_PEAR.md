@@ -366,6 +366,7 @@ FROM complete_join_dataset
 GROUP BY 1,2;
 
 ```
+<br>
 
 | customer_id | rental_count | latest_rental_date |
 | :---:| :---:| :---:|
@@ -400,6 +401,7 @@ FROM category_counts
 GROUP BY 1;
 
 ```
+<br>
 
 | customer_id | total_count |
 | :---:| :---:|

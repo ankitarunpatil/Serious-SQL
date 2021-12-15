@@ -216,6 +216,50 @@ GROUP BY 1
 ORDER BY 1 DESC
 ;
 
+```
+
+<br>
+
+| film_count | total_actor |
+| :---:| :---:|
+|42	|1|
+|41	|1|
+|40	|1|
+|39	|1|
+|37	|1|
+|36	|1|
+|35	|6|
+|34	|5|
+|33	|13|
+|32	|10|
+|31	|16|
+|30	|16|
+|29	|11|
+|28	|11|
+|27	|17|
+|26	|14|
+|25	|19|
+|24	|14|
+|23	|8|
+|22	|10|
+|21	|5|
+|20	|9|
+|19	|4|
+|18	|2|
+|16	|1|
+|15	|2|
+|14	|1|
+
+<br> 
+
+* We can conclude that 14 is the minimum number of films that one actor stars in. 
+
+<br>
+
+* Let us also confirm if there are multiple actors per film.
+
+
+```sql
 -- Also confirm there are multiple actors per film
 
 WITH film_actor_count AS 
@@ -233,6 +277,25 @@ ORDER BY 1 DESC;
 
 
 ```
+
+<br>
+
+| actor_count | total_films |
+| :---:| :---:|
+|15	|1|
+|13	|6|
+|12	|6|
+|11	|14|
+|10	|21|
+|9	|49|
+|8	|90|
+|7	|119|
+|6	|150|
+|5	|195|
+|4	|137|
+|3	|119|
+|2	|69|
+|1	|21|
 
 <br>
 

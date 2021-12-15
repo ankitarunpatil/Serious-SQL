@@ -307,7 +307,10 @@ ORDER BY 1 DESC;
 
 ### Solution Plan
 
+<br>
+
 #### Category Insights
+
 
 1. Create a base dataset and join all relevant tables ```complete_joint_dataset```
 2. Calculate customer rental counts for each category ```category_counts```
@@ -318,6 +321,8 @@ ORDER BY 1 DESC;
 7. Generate our first top category insights table using all previously generated tables ```top_category_insights```
 8. Generate the 2nd category insights ```second_category_insights```
 
+
+<br> 
 
 1. Creating Base table:
     This table joins multiple tables together after the analysis of different relationships between tables.
@@ -344,6 +349,8 @@ ON fc.category_id = c.category_id;
 
 ```
 
+<br>
+
 2. Creating Category Counts 
    This is a follow up aggregated table that uses ```complete_join_dataset``` to aggregate data based on ```customer_id``` and ```category_name``` to generate a ```rental_count``` based on latest ```rental_date```.
 
@@ -360,6 +367,26 @@ GROUP BY 1,2;
 
 ```
 
+| customer_id | rental_count | latest_rental_date |
+| :---:| :---:| :---:|
+|1|	Classics	|6|	2005-08-19 09:55:16|
+|1|	Comedy	|5|	2005-08-22 19:41:37|
+|1|	Drama	|4|	2005-08-18 03:57:29|
+|1|	Animation	|2|	2005-08-22 20:03:46|
+|1|	Sci-Fi	|2|	2005-08-21 23:33:57|
+|1|	New	|2|	2005-08-19 13:56:54|
+|1|	Action	|2|	2005-08-17 12:37:54|
+|1|	Music	|2|	2005-07-09 16:38:01|
+|1|	Sports	|2|	2005-07-08 07:33:56|
+|1|	Family	|1|	2005-08-02 18:01:38|
+|1|	Documentary	|1|	2005-08-01 08:51:04|
+|1|	Foreign	|1|	2005-07-28 16:18:23|
+|1|	Travel	|1|	2005-07-11 10:13:46|
+|1|	Games	|1|	2005-07-08 03:17:05|
+
+<br>
+
+
 3. Creating Total Counts 
    To generate ```total_counts``` the above ```category_counts``` table is used.
 
@@ -373,6 +400,16 @@ FROM category_counts
 GROUP BY 1;
 
 ```
+
+| customer_id | total_count |
+| :---:| :---:|
+|184|	23|
+|87	|30|
+|477|	22|
+|273|	35|
+|550|	32|
+
+<br>
 
 4. Creating TOP Categories 
    Selecting top 2 categories with respect to each customer, and ordering them by descending order of rental date and rental count, so that we get most recent and most watched films.

@@ -438,11 +438,25 @@ where category_rank <=2;
 
 ```
 
+<br>
+
+| customer_id | category_name | rental_count | category_rank |
+| :---:| :---:| :---:| :---:|
+|1|	Classics |	6|	1|
+|1|	Comedy	|5|	2|
+|2|	Sports	|5|	1|
+|2|	Classics	|4|	2|
+|3|	Action	|4|	1|
+
+<br>
+
 5. Creating Average Category Counts
 
    Using the ```category_counts``` table we can find the average category count for each category.
    Rounding off to the nearest integer using ```FLOOR``` function.
    
+<br>
+
 ```sql
 
 DROP TABLE IF EXISTS average_category_counts;
@@ -455,13 +469,37 @@ GROUP BY 1;
 
 ```
 
+<br>
+
+| category_name | category_average |
+| :---:| :---:|
+|Action	|2|
+|Animation	|2|
+|Classics	|2|
+|Documentary	|2|
+|Drama	|2|
+|Family	|2|
+|Foreign|	2|
+|Games	|2|
+|New	|2|
+|Sci-Fi	|2|
+|Sports	|2|
+|Children|	1|
+|Comedy	|1|
+|Horror	|1|
+|Music	|1|
+|Travel|	1|
+
+<br>
 
 6. TOP Category Percentile 
 
    To find the top category percentile we will be needing ```category_counts``` and ```top_categories```.
    i.e. comparing each customer's top category ```rental_count``` to all other DVD Rental Co customers.
    Here, ```PERCENT_RANK``` window funtion is used.
-   
+
+<br>
+
 ```sql
 
 DROP TABLE IF EXISTS top_category_percentile;
@@ -495,10 +533,28 @@ AND top_category_name = category_name;
 
 ```
 
+<br>
+
+| customer_id | category_name | rental_count | percentile |
+| :---:| :---:| :---:| :---:|
+|323|	Action|	7	|1
+|506|	Action|	7	|1|
+|151|	Action|	6	|1|
+|410|	Action|	6	|1|
+|126|	Action|	6	|1|
+|51|	Action|	6	|1|
+|487|	Action|	6	|1|
+|363|	Action|	6	|1|
+|209|	Action|	6	|1|
+|560|	Action|	6|	1|
+
+<br>
 
 7. 1st Category Insights
    Combining all tables to get category insights.
-   
+
+<br>
+
 ```sql
 
 DROP TABLE IF EXISTS first_category_insights;
@@ -515,9 +571,29 @@ ON base.category_name = average.category_name;
 
 ```
 
+<br>
+
+| customer_id | category_name | rental_count | average_comparison | percentile |
+| :---:| :---:| :---:| :---:| :---:| 
+|323|	Action|	7|	5|	1|
+|506|	Action|	7|	5	|1|
+|151|	Action|	6|	4	|1|
+|410|	Action|	6|	4	|1|
+|126|	Action|	6|	4	|1|
+|51|	Action|	6|	4	|1|
+|487|	Action|	6|	4	|1|
+|363|	Action|	6|	4	|1|
+|209|	Action|	6|	4	|1|
+|560|	Action|	6|	4	|1|
+
+
+<br>
+
 
 8. 2nd Category Insights
    This insight is obtained by using ```top_categories``` and ```total_counts``` tables.
+
+<br>
 
 ```sql
 
@@ -535,11 +611,32 @@ where category_rank = 2;
 
 ```
 
+<br>
+
+| customer_id | category_name | rental_count | total_percentage |
+| :---:| :---:| :---:| :---:|
+|184|	Drama|	3|	13|
+|87	|Sci-Fi|	3|	10|
+|477|	Travel|	3|	14|
+|273|	New|	4	|11|
+|550|	Drama|	4|	13|
+|51	|Drama|	4	|12|
+|394|	Documentary|	3	|14|
+|272|	Documentary|	3|	15|
+|70	|Music|	2	|11|
+|190|	Classics|	3|	11|
+
+<br>
+
 ### Category Recommendations 
+
+<br>
 
 1. Creating Film Counts 
    Create an aggregate base table form ```complete_joint_dataset``` based on ```film_id``` and ```title```
-   
+
+<br>
+
 ```sql
 
 DROP TABLE IF EXISTS film_counts;
@@ -553,9 +650,28 @@ FROM complete_join_dataset;
 
 ```
 
+<br>
+
+| film_id | title | category_name | rental_count |
+| :---:| :---:| :---:| :---:|
+|103|	BUCKET BROTHERHOOD|	Travel	|34|
+|738|	ROCKETEER MOTHER|	Foreign	|33|
+|331|	FORWARD TEMPLE|	Games	|32|
+|489|	JUGGLER HARDLY|	Animation|	32|
+|767|	SCALAWAG DUCK|	Music	|32|
+|382|	GRIT CLOCKWORK|	Games	|32|
+|730|	RIDGEMONT SUBMARINE|	New	|32|
+|973|	WIFE TURN|	Documentary|	31|
+|621|	NETWORK PEAK|	Family|	31|
+|1000|	ZORRO ARK|	Comedy|	31|
+
+<br>
+
 2. Creating Category Film Exclusions
    Generate a table with all of our customer’s previously watched films so we don’t recommend them something which they’ve already seen before.
-   
+
+<br>
+
 ```sql
 
 DROP TABLE IF EXISTS category_film_exclusions;
@@ -567,10 +683,28 @@ FROM complete_join_dataset;
 
 ```
 
+<br>
+
+| customer_id | film_id |
+| :---:| :---:|
+|596|	103|
+|176|	121|
+|459|	724|
+|375|	641|
+|153|	730|
+|1|	480|
+|291|	285|
+|144|	93|
+|158|	786|
+|211|	962|
+
+<br>
+
 
 3. Final Category Recommendations 
    Perform ```ANTI JOIN``` on ```category_film_exclusion``` for the top 2 categories found in ```top_categories```.
 
+<br>
 
 ```sql
 
@@ -604,12 +738,27 @@ WHERE reco_rank <=3;
 
 ```
 
+<br>
+
+| customer_id | category_name | category_rank | film_id | title | rental_count | reco_rank |
+| :---:| :---:| :---:| :---:| :---:| :---:| :---:|
+|1|	Classics|	1|	891|	TIMBERLAND SKY|	31|	1|
+|1|	Classics|	1|	358|	GILMORE BOILED|	28|	2|
+|1|	Classics|	1|	951|	VOYAGE LEGALLY|	28|	3|
+|1|	Comedy|	2|	1000|	ZORRO ARK	|31	|1|
+|1|	Comedy|	2|	127|	CAT CONEHEADS|	30|	2|
+|1|	Comedy|	2|	638|	OPERATION OPERATION	|27|	3|
+
+<br>
 
 ### Actor Insights
 
+<br>
+
 1. Creating Actor Joint Table 
    We will need to create a new base table ```actor_joint_table``` as we have to introduce ```dvd_rentals.film_actor``` and ```dvd_rentals.actor```.
-   
+
+<br>
    
 ```sql
 
@@ -636,10 +785,29 @@ ON a.actor_id = ac.actor_id;
 
 ```
 
+<br>
+
+| customer_id | rental_id | film_id | rental_date | title | actor_id | first_name | last_name |
+| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:|
+||130|	1|	80|	2005-05-24 22:53:30	|BLANKET BEVERLY|	200|	THORA|	TEMPLE|
+|130|	1	|80|	2005-05-24 22:53:30	|BLANKET BEVERLY|	193	|BURT	|TEMPLE|
+|130|	1	|80|	2005-05-24 22:53:30	|BLANKET BEVERLY|	173	|ALAN	|DREYFUSS|
+|130|	1	|80|	2005-05-24 22:53:30	|BLANKET BEVERLY|	16	|FRED|	COSTNER|
+|459|	2	|333|	2005-05-24 22:54:33	|FREAKY POCUS	|147	|FAY	|WINSLET|
+|459|	2	|333|	2005-05-24 22:54:33	|FREAKY POCUS	|127	|KEVIN	|GARLAND|
+|459|	2	|333|	2005-05-24 22:54:33	|FREAKY POCUS	|105	|SIDNEY	|CROWE|
+|459|	2	|333|	2005-05-24 22:54:33	|FREAKY POCUS	|103	|MATTHEW|	LEIGH|
+|459|	2	|333|	2005-05-24 22:54:33	|FREAKY POCUS	|42	|TOM	|MIRANDA|
+|408|	3	|373|	2005-05-24 23:03:39	|GRADUATE LORD|	140|	WHOOPI|	HURT|
+
+<br>
+
 
 2. Creating TOP Actor counts 
    Aggregating rental counts per actor.
-   
+
+<br>
+
 ```sql
 
 DROP TABLE IF EXISTS top_actor_count;
@@ -677,8 +845,28 @@ WHERE actor_rank = 1;
 
 ```
 
+<br>
+
+| customer_id | rental_id | film_id | rental_date | title |
+| :---:| :---:| :---:| :---:| :---:|
+|1|	37|	VAL|	BOLGER|	6|
+|2|	107|	GINA|	DEGENERES|	5|
+|3|	150|	JAYNE|	NOLTE|	4|
+|4|	102|	WALTER|	TORN|	4|
+|5|	12|	KARL|	BERRY|	4|
+|6|	191|	GREGORY|	GOODING|	4|
+|7|	65|	ANGELA|	HUDSON|	5|
+|8|	167|	LAURENCE|	BULLOCK|	5|
+|9|	23|	SANDRA|	KILMER|	3|
+|10|	12|	KARL|	BERRY|	4|
+
+
+<br>
+
 
 ### Actor Recommendations 
+
+<br>
 
 1. Actor Film Counts 
    Generate aggregated total rental counts across all customers by ```actor_id``` and ```film_id``` so we can join onto our ```top_actor_counts``` table
@@ -706,8 +894,29 @@ ON a.film_id = film_counts.film_id;
 
 ```
 
+<br>
+
+| film_id | actor_id | rental_count |
+| :---:| :---:| :---:|
+|80|	200|	12|
+|80|	193|	12|
+|80|	173|	12|
+|80|	16|	12|
+|333|	147|	17|
+|333|	127|	17|
+|333|	105|	17|
+|333|	103|	17|
+|333|	42|	17|
+|373|	140|	16|
+
+
+<br>
+
 2. Actor Film Exclusions 
     Customers would not want to receive a recommendation for the same film twice in the same email!
+
+
+<br>
 
 ```sql
 
@@ -729,10 +938,27 @@ UNION
 
 ```
 
+<br>
+
+| customer_id | film_id |
+| :---:| :---:|
+|493|	567|
+|114|	789|
+|596|	103|
+|176|	121|
+|459|	724|
+|375|	641|
+|153|	730|
+|291|	285|
+|1|	480|
+|144|	93|
+
+<br>
 
 3. Final Actor Recommendations
    Same as Category Insights
 
+<br>
 
 ```sql
 
@@ -769,6 +995,27 @@ WHERE reco_rank <=3;
 
 ```
 
+<br>
+
+| customer_id | first_name | last_name | rental_count | title | film_id | actor_id | reco_rank |
+| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:|
+|1|	VAL|	BOLGER|	6|	PRIMARY GLASS|	697|	37|	1|
+|1|	VAL|	BOLGER|	6|	ALASKA PHANTOM|	12|	37|	2|
+|1|	VAL|	BOLGER|	6|	METROPOLIS COMA|	572|	37|	3|
+|2|	GINA|	DEGENERES|	5|	GOODFELLAS SALUTE|	369|	107|	1|
+|2|	GINA|	DEGENERES|	5|	WIFE TURN|	973|	107	|2|
+|2|	GINA|	DEGENERES|	5|	DOGMA FAMILY|	239|	107|	3|
+|3|	JAYNE|	NOLTE|	4|	SWEETHEARTS SUSPECTS|	873|	150|	1|
+|3|	JAYNE|	NOLTE|	4|	DANCING FEVER|	206|	150	|2|
+|3|	JAYNE|	NOLTE|	4|	INVASION CYCLONE|	468|	150|	3|
+|4|	WALTER|	TORN|	4|	CURTAIN VIDEOTAPE|	200|	102|	1|
+|4|	WALTER|	TORN|	4|	LIES TREATMENT|	521|	102	|2|
+|4|	WALTER|	TORN|	4|	NIGHTMARE CHILL|	624|	102|	3|
+|5|	KARL|	BERRY|	4|	VIRGINIAN PLUTO|	945|	12|	1|
+|5|	KARL|	BERRY|	4|	STAGECOACH ARMAGEDDON	|838|	12|	2|
+|5|	KARL|	BERRY|	4|	TELEMARK HEARTBREAKERS|	880|	12|	3|
+
+<br>
 
 ## Final Transformation 
 

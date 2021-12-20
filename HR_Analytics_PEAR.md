@@ -87,3 +87,46 @@
 
 <br>
 
+
+## Data Exploration
+
+* Exploring the schema ```employees``` by accessing ```pg_indexes``` to get the index information.
+
+<br>
+
+```sql
+SELECT *
+FROM pg_indexes
+WHERE schemaname = 'employees';
+
+```
+
+<br>
+
+| schemaname	| tablename	| indexname	| indexdef  |
+| :---:| :---:| :---:| :---:|
+|employees|	employee|	idx_16988_primary|	CREATE UNIQUE INDEX idx_16988_primary ON employees.employee USING btree (id)|
+|employees|	department_employee|	idx_16982_primary|	CREATE UNIQUE INDEX idx_16982_primary ON employees.department_employee USING btree (employee_id, department_id)|
+|employees|	department_employee|	idx_16982_dept_no|	CREATE INDEX idx_16982_dept_no ON employees.department_employee USING btree (department_id)|
+|employees|	department|	idx_16979_primary|	CREATE UNIQUE INDEX idx_16979_primary ON employees.department USING btree (id)|
+|employees|	department|	idx_16979_dept_name|	CREATE UNIQUE INDEX idx_16979_dept_name ON employees.department USING btree (dept_name)|
+|employees|	department_manager|	idx_16985_primary|	CREATE UNIQUE INDEX idx_16985_primary ON employees.department_manager USING btree (employee_id, department_id)|
+|employees|	department_manager|	idx_16985_dept_no|	CREATE INDEX idx_16985_dept_no ON employees.department_manager USING btree (department_id)|
+|employees|	salary|	idx_16991_primary|	CREATE UNIQUE INDEX idx_16991_primary ON employees.salary USING btree (employee_id, from_date)|
+|employees|	title|	idx_16994_primary|	CREATE UNIQUE INDEX idx_16994_primary ON employees.title USING btree (employee_id, title, from_date)|
+
+<br>
+
+From the above table we can observe that:
+1. The following tables have unique indexes on a single column:
+    * ```employees.employee```
+    * ```employees.department```
+
+2. The rest of the tables have multiple records for ```employee_id``` values.
+    * ```employees.department_employee```
+    * ```employees.department_manager```
+    * ```employee.salary```
+    * ```employee.title```
+ 
+##  Individual Table Analysis
+

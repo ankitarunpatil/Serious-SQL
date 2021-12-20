@@ -130,3 +130,225 @@ From the above table we can observe that:
  
 ##  Individual Table Analysis
 
+### Employee Table
+
+* Confirming whether there is a single record per employee.
+
+<br>
+
+```sql
+
+with cte AS  
+  (SELECT 
+    id,
+    COUNT(*) as row_count
+  FROM employees.employee
+  GROUP BY id)
+SELECT
+  row_count,
+  COUNT(DISTINCT id) as employee_count
+FROM cte 
+GROUP BY 1
+ORDER BY 1;
+
+```
+
+<br>
+
+| row_count	| employee_count|
+| :---:| :---:|
+| 1 | 300024|
+
+<br>
+
+### Department Table 
+
+* There are 9 unique departments 
+
+<br>
+
+```sql
+
+SELECT 
+  *
+FROM employees.department;
+
+```
+
+| id	| dept_name|
+| :---:| :---:|
+|d001|	Marketing|
+|d002|	Finance|
+|d003|	Human Resources|
+|d004|	Production|
+|d005|	Development|
+|d006|	Quality Management|
+|d007|	Sales|
+|d008|	Research|
+|d009|	Customer Service|
+
+<br>
+
+### Department Employee table 
+
+```sql
+
+SELECT 
+  *
+FROM employees.department_employee
+LIMIT 5;
+
+```
+
+| employee_id	| department_id| from_date	| to_date|
+| :---:| :---:| :---:| :---:|
+|10001|	d005|	1986-06-26|	9999-01-01|
+|10002|	d007|	1996-08-03|	9999-01-01|
+|10003|	d004|	1995-12-03|	9999-01-01|
+|10004|	d004|	1986-12-01|	9999-01-01|
+|10005|	d003|	1989-09-12|	9999-01-01|
+
+
+<br>
+
+* In the ```department_employee``` table we have a column named ```to_date = '9999-01-01'``` 
+* Lets investigate the distribution of the ```to_date``` column.
+
+<br>
+
+```sql
+
+SELECT 
+  to_date,
+  COUNT(*) as record_count
+FROM employees.department_employee
+GROUP BY 1
+ORDER BY 1 DESC
+LIMIT 5;
+
+```
+
+<br>
+
+| to_date	| record_count|
+| :---:| :---:|
+|9999-01-01|	240124|
+|2000-04-14|	48|
+|2000-03-29|	46|
+|2001-02-10|	46|
+|1999-12-06|	45|
+
+<br>
+
+* We see that there are many values related to ```to_date```. We have many values for ```9999-01-01```. 
+* Now let's confirm that we have a many-to-one relationship between ```department_employee``` and its ```employee_id```
+
+
+```sql
+
+with employee_id_cte AS 
+  (SELECT 
+    employee_id,
+    COUNT(*) as row_count
+  FROM employees.department_employee
+  GROUP BY 1)
+SELECT 
+  row_count,
+  COUNT(DISTINCT employee_id) as employee_count 
+FROM employee_id_cte
+GROUP BY 1 
+ORDER BY 1 DESC;
+
+```
+
+* We can see that there are approximately 10% rows with 2 records. i.e. there are multiple records per ```employee_id```
+
+
+### Department manager table
+
+```sql 
+
+SELECT 
+FROM employees.department_manager
+LIMIT 5;
+
+```
+
+<br>
+
+| employee_id	| department_id| from_date	| to_date|
+| :---:| :---:| :---:| :---:|
+|110022|	d001|	1985-01-01|	1991-10-01|
+|110039|	d001|	1991-10-01|	9999-01-01|
+|110085|	d002|	1985-01-01|	1989-12-17|
+|110114|	d002|	1989-12-17|	9999-01-01|
+|110183|	d003|	1985-01-01|	1992-03-21|
+
+<br>
+
+* Investigating ```to_date``` column 
+
+<br>
+
+```sql
+
+SELECT 
+  to_date,
+  COUNT(*) as record_count
+FROM employees.department_manager
+GROUP BY 1
+ORDER BY 2 DESC;
+
+```
+<br>
+
+| to_date	| record_count|
+| :---:| :---:|
+|9999-01-01|	9|
+|1994-06-28|	1|
+|1991-09-12|	1|
+|1992-04-25|	1|
+|1991-03-07|	1|
+|1992-03-21|	1|
+|1991-10-01|	1|
+|1992-08-02|	1|
+|1988-10-17|	1|
+|1996-01-03|	1|
+|1988-09-09|	1|
+|1991-04-08|	1|
+|1989-05-06|	1|
+|1989-12-17|	1|
+|1996-08-30|	1|
+|1992-09-08|	1|
+
+<br>
+
+* Confirming rows per ```employee_id```
+
+<br>
+
+```sql
+
+WITH employee_id_cte AS 
+  (SELECT 
+    employee_id,
+    COUNT(*) as row_count
+  FROM employees.department_manager
+  GROUP BY 1)
+SELECT 
+  row_count,
+  COUNT(DISTINCT employee_id) AS employee_count
+FROM employee_id_cte 
+GROUP BY 1
+ORDER BY 1 DESC;
+
+```
+
+<br>
+
+| to_date	| record_count|
+| :---:| :---:|
+| 1 | 24 |
+
+* From the above query we can see that each ```employee_id``` that appears in ```empoyees.department_manager``` table will have only have a single record or a one-to-one relationship.
+

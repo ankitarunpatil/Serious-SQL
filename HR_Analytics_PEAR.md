@@ -352,3 +352,119 @@ ORDER BY 1 DESC;
 
 * From the above query we can see that each ```employee_id``` that appears in ```empoyees.department_manager``` table will have only have a single record or a one-to-one relationship.
 
+
+### Salary Table 
+
+* Salary table comprises of salary of an employee over time. 
+
+<br>
+
+```sql 
+
+SELECT 
+  *
+FROM employees.salary
+WHERE employee_id = 100001
+ORDER BY from_date DESC;
+
+```
+
+<br>
+
+| employee_id	| amount| from_date | to_date |
+| :---:| :---:| :---:| :---:|
+|10001|	88958|	2002-06-22|	9999-01-01|
+|10001|	85097|	2001-06-22|	2002-06-22|
+|10001|	85112|	2000-06-22|	2001-06-22|
+|10001|	84917|	1999-06-23|	2000-06-22|
+|10001|	81097|	1998-06-23|	1999-06-23|
+|10001|	81025|	1997-06-23|	1998-06-23|
+|10001|	80013|	1996-06-23|	1997-06-23|
+|10001|	76884|	1995-06-24|	1996-06-23|
+|10001|	75994|	1994-06-24|	1995-06-24|
+|10001|	75286|	1993-06-24|	1994-06-24|
+|10001|	74333|	1992-06-24|	1993-06-24|
+|10001|	71046|	1991-06-25|	1992-06-24|
+|10001|	66961|	1990-06-25|	1991-06-25|
+|10001|	66596|	1989-06-25|	1990-06-25|
+|10001|	66074|	1988-06-25|	1989-06-25|
+|10001|	62102|	1987-06-26|	1988-06-25|
+|10001|	60117|	1986-06-26|	1987-06-26|
+
+<br>
+
+* Investigative the ```to_date``` column 
+
+```sql
+
+SELECT 
+  to_date,
+  COUNT(*) as record_count,
+  COUNT(DISTINCT employee_id) as employee_count
+FROM employees.salary
+GROUP BY 1 
+ORDER BY 1 DESC
+LIMIT 5;
+
+```
+
+<br>
+
+| employee_id	| amount| from_date |
+| :---:| :---:| :---:|
+|9999-01-01|	240124|	240124|
+|2020-08-01|	686|	686|
+|2020-07-31|	641|	641|
+|2020-07-30|	673|	673|
+|2020-07-29|	679|	679|
+
+<br>
+
+* Checking for duplicate ```employee_id```
+
+<br>
+
+```sql
+
+WITH employee_id_cte AS 
+  (SELECT 
+    employee_id,
+    COUNT(*) as row_count
+  FROM employees.salary
+  GROUP BY 1)
+SELECT
+  row_count,
+  COUNT(DISTINCT employee_id) as employee_count
+FROM employee_id_cte
+GROUP BY 1
+ORDER BY 1 DESC;
+
+```
+
+<br>
+
+| row_count	| employee_count|
+| :---:| :---:|
+|18|	8180|
+|17|	16106|
+|16|	16331|
+|15|	16799|
+|14|	17193|
+|13|	17318|
+|12|	17530|
+|11|	17952|
+|10|	18474|
+|9|	18815|
+|8|	19281|
+|7|	19715|
+|6|	20403|
+|5|	21335|
+|4|	22038|
+|3|	15784|
+|2|	8361|
+|1|	8409|
+
+<br>
+
+* From the above table we can observe that there are more than one record per employee for majority of the records. We need to be careful while joining.
+

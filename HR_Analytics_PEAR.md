@@ -16,15 +16,15 @@
 
 <br>
 
-### Required Insights 
+## Required Insights 
 
 * The following insights must be generated for the 2 dashboards as requested by HR Analytica.
 
 <br>
 
-#### Company Level
+## Company Level
 
-##### Splitting by gender - current snapshot
+### Splitting by gender - current snapshot
 
 * Total number of employees
 * Average company tenure in years
@@ -34,20 +34,20 @@
 
 <br>
 
-#### Department Level
+## Department Level
 
 * Similar to company level, just at department level that includes additional department levek tenure metrics split by gender.
 
 <br>
 
 
-#### Title level
+## Title level
 
 * Siilar to department level but a little level of granularity.
 
 <br>
 
-#### Deep diving on the employee relation
+## Deep diving on the employee relation
 
 * Highlight recent event for every single employee form time to time.
 * See all the various employment history ordered by effective date including salary, department, manager and title changes
@@ -57,12 +57,33 @@
 
 <br>
 
-#### Outputs
+## Outputs
 
-#### Current snapshot reporting
+### Current snapshot reporting
 
 <br>
 <p align="center">
   <img width="498" height="746" src="HR_Analytics/Current_Snapshot.png">
 </p>
+
+### Historic Employee Deep Dive 
+
+<br>
+<p align="center">
+  <img width="498" height="746" src="HR_Analytics/Historic_deep_dive.png">
+</p>
+
+<br>
+
+
+## Exploration
+
+### ER Diagram 
+
+<br>
+<p align="center">
+  <img width="750" height="450" src="HR_Analytics/ER.png">
+</p>
+
+<br>
 

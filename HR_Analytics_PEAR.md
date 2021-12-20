@@ -468,3 +468,162 @@ ORDER BY 1 DESC;
 
 * From the above table we can observe that there are more than one record per employee for majority of the records. We need to be careful while joining.
 
+## Analysis 
+
+#### Splitting the SQL solution into following parts
+    1. Data Cleaning and Date Adjustments
+    2. Current Snapshot Analysis 
+    3. Historical Analysis 
+    
+
+## 1. Data Cleaning
+
+* First we will have to adjust all the date firlds identified by HR Analytica
+* Incrementing all of the date fileds except the end date ```9999-01-01``` 
+* Also cast the ```DATE``` to ```TIMESTAMP``` to keep the data original and as similar as possible.
+* Creating materialized views with same original tables 
+
+<br>
+
+
+```sql
+
+DROP SCHEMA IF EXISTS mv_employees CASCADE;
+CREATE SCHEMA mv_employees;
+
+
+-- department 
+
+DROP MATERIALIZED VIEW IF EXISTS mv_employees.department;
+CREATE MATERIALIZED VIEW mv_employees.department AS 
+SELECT 
+  *
+FROM employees.department;
+
+
+select * from mv_employees.department limit 10;
+
+--department employee 
+
+select * from employees.department_employee;
+
+DROP MATERIALIZED VIEW IF EXISTS mv_employees.department_employee;
+CREATE MATERIALIZED VIEW mv_employees.department_employee AS 
+SELECT 
+  employee_id,
+  department_id,
+  (from_date + interval '18 years')::DATE as from_date,
+  CASE 
+    WHEN to_date <> '9999-01-01' THEN (to_date + interval '18 years')::DATE
+    ELSE to_date 
+    END AS to_date
+FROM employees.department_employee;
+
+
+-- department_manager 
+
+SELECT 
+  *
+FROM employees.department_manager
+LIMIT 10;
+
+DROP MATERIALIZED VIEW IF EXISTS mv_employees.department_manager;
+CREATE MATERIALIZED VIEW mv_employees.department_manager AS 
+SELECT 
+  employee_id,
+  department_id,
+  (from_date + interval '18 years')::DATE as from_date,
+  CASE 
+    WHEN to_date <> '9999-01-01' THEN (to_date + interval '18 years')::DATE
+    ELSE to_date 
+    END AS to_date
+FROM employees.department_manager;
+
+
+-- employee 
+
+SELECT 
+  *
+FROM employees.employee
+LIMIT 10;
+
+
+SELECT 
+  *
+FROM employees.employee
+WHERE birth_date = '9999-01-01';
+
+
+DROP MATERIALIZED VIEW IF EXISTS mv_employees.employee;
+CREATE MATERIALIZED VIEW mv_employees.employee AS 
+SELECT 
+  id,
+  (birth_date + interval '18 years')::DATE as birth_date,
+  first_name,
+  last_name,
+  gender,
+  (hire_date + interval '18 years')::DATE as hire_date
+FROM employees.employee;
+
+
+-- salary 
+
+SELECT 
+  *
+FROM employees.salary
+LIMIT 10;
+
+
+SELECT 
+  *
+FROM employees.salary
+WHERE to_date = '9999-01-01'
+LIMIT 10;
+
+
+DROP MATERIALIZED VIEW IF EXISTS mv_employees.salary;
+CREATE MATERIALIZED VIEW mv_employees.salary AS 
+SELECT 
+  employee_id,
+  amount,
+  (from_date + interval '18 years')::DATE AS from_date,
+  CASE 
+    WHEN to_date <> '9999-01-01' THEN (to_date + interval '18 years')::DATE 
+    ELSE to_date 
+    END AS to_date
+FROM employees.salary;
+
+
+-- title 
+
+SELECT 
+  *
+FROM employees.title
+LIMIT 10;
+
+DROP MATERIALIZED VIEW IF EXISTS mv_employees.title;
+CREATE MATERIALIZED VIEW mv_employees.title AS 
+SELECT 
+  employee_id,
+  title,
+  (from_date + interval '18 years' )::DATE AS from_date,
+  CASE 
+    WHEN to_date <> '9999-01-01' THEN (to_date + interval '18 years')::DATE 
+    ELSE to_date 
+    END AS to_date
+FROM employees.title;
+
+-- Creating indexes 
+
+
+CREATE UNIQUE INDEX ON mv_employees.employee USING btree (id);
+CREATE UNIQUE INDEX ON mv_employees.department_employee USING btree (employee_id, department_id);
+CREATE INDEX        ON mv_employees.department_employee USING btree (department_id);
+CREATE UNIQUE INDEX ON mv_employees.department USING btree (id);
+CREATE UNIQUE INDEX ON mv_employees.department USING btree (dept_name);
+CREATE UNIQUE INDEX ON mv_employees.department_manager USING btree (employee_id, department_id);
+CREATE INDEX        ON mv_employees.department_manager USING btree (department_id);
+CREATE UNIQUE INDEX ON mv_employees.salary USING btree (employee_id, from_date);
+CREATE UNIQUE INDEX ON mv_employees.title USING btree (employee_id, title, from_date);
+
+```

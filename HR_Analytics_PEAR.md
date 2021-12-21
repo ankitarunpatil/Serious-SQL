@@ -713,7 +713,8 @@ SELECT
   ROUND(MIN(salary)) AS min_salary,
   ROUND(MAX(salary)) AS max_salary,
   ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY salary)) AS median_salary,
-  ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY salary) - PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY salary)) AS inter_quartile_range,
+  ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY salary) - 
+        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY salary)) AS inter_quartile_range,
   ROUND(STDDEV(salary)) AS stddev_salary
 FROM mv_employees.current_employee_snapshot
 GROUP BY gender;

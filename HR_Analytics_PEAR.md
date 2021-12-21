@@ -471,9 +471,10 @@ ORDER BY 1 DESC;
 ## Analysis 
 
 #### Splitting the SQL solution into following parts
-    1. Data Cleaning and Date Adjustments
-    2. Current Snapshot Analysis 
-    3. Historical Analysis 
+   
+   1. Data Cleaning and Date Adjustments
+   2. Current Snapshot Analysis 
+   3. Historical Analysis 
     
 
 ## 1. Data Cleaning
@@ -501,11 +502,9 @@ SELECT
 FROM employees.department;
 
 
-select * from mv_employees.department limit 10;
 
 --department employee 
 
-select * from employees.department_employee;
 
 DROP MATERIALIZED VIEW IF EXISTS mv_employees.department_employee;
 CREATE MATERIALIZED VIEW mv_employees.department_employee AS 
@@ -522,10 +521,6 @@ FROM employees.department_employee;
 
 -- department_manager 
 
-SELECT 
-  *
-FROM employees.department_manager
-LIMIT 10;
 
 DROP MATERIALIZED VIEW IF EXISTS mv_employees.department_manager;
 CREATE MATERIALIZED VIEW mv_employees.department_manager AS 
@@ -542,18 +537,6 @@ FROM employees.department_manager;
 
 -- employee 
 
-SELECT 
-  *
-FROM employees.employee
-LIMIT 10;
-
-
-SELECT 
-  *
-FROM employees.employee
-WHERE birth_date = '9999-01-01';
-
-
 DROP MATERIALIZED VIEW IF EXISTS mv_employees.employee;
 CREATE MATERIALIZED VIEW mv_employees.employee AS 
 SELECT 
@@ -567,18 +550,6 @@ FROM employees.employee;
 
 
 -- salary 
-
-SELECT 
-  *
-FROM employees.salary
-LIMIT 10;
-
-
-SELECT 
-  *
-FROM employees.salary
-WHERE to_date = '9999-01-01'
-LIMIT 10;
 
 
 DROP MATERIALIZED VIEW IF EXISTS mv_employees.salary;
@@ -596,11 +567,6 @@ FROM employees.salary;
 
 -- title 
 
-SELECT 
-  *
-FROM employees.title
-LIMIT 10;
-
 DROP MATERIALIZED VIEW IF EXISTS mv_employees.title;
 CREATE MATERIALIZED VIEW mv_employees.title AS 
 SELECT 
@@ -612,6 +578,7 @@ SELECT
     ELSE to_date 
     END AS to_date
 FROM employees.title;
+
 
 -- Creating indexes 
 
@@ -627,3 +594,101 @@ CREATE UNIQUE INDEX ON mv_employees.salary USING btree (employee_id, from_date);
 CREATE UNIQUE INDEX ON mv_employees.title USING btree (employee_id, title, from_date);
 
 ```
+
+<br>
+
+### Current Snapshot Analysis
+    
+* We will create a snapshot view whoch we will use as a base for each of the aggregated layers for different dashboard outputs.
+    
+#### Analysis Plan
+
+1. Apply LAG window functions on the ```salary``` materialized view to obtain the latest ```previous_salary``` value, keeping only current valid records with ```to_date = '9999-01-01'```
+2. Join previous salary and all other required information from the materialized views for the dashboard analysis (omitting the department_manager view)
+3. Apply ```WHERE``` filter to keep only current records
+4. Make sure to include the ```gender``` column from the ```employee``` view for all calculations
+5. Use the ```hire_date``` column from the ```employee``` view to calculate the number of tenure years
+6. Include the ```from_date``` columns from the ```title``` and ```department``` are included to calculate tenure
+7. Use the ```salary``` table to calculate the current average salary
+8. Include ```department``` and ```title``` information for additional group by aggregations
+9. Implement the various statistical measures for the salary amount
+10. Combine all of these elements into a single final current snapshot view
+    
+
+#### Current Employee Snapshot 
+
+
+```sql
+
+DROP VIEW IF EXISTS mv_employees.current_employee_snapshot CASCADE;
+CREATE VIEW mv_employees.current_employee_snapshot AS 
+WITH cte_previous_salary AS   
+  (SELECT
+    *
+  FROM 
+    (SELECT 
+      employee_id,
+      to_date,
+      LAG(amount) OVER (PARTITION BY employee_id ORDER BY from_date) AS amount
+    FROM mv_employees.salary) all_salaries
+  WHERE to_date = '9999-01-01'),
+cte_joined_data AS
+  (SELECT 
+    e.id as employee_id,
+    e.gender,
+    e.hire_date,
+    t.title,
+    s.amount as salary,
+    p.amount as previous_salary,
+    d.dept_name as department,
+    t.from_date as title_from_date,
+    dp.from_date as department_from_date
+  FROM mv_employees.employee e  
+  INNER JOIN mv_employees.title t 
+  ON e.id = t.employee_id 
+  INNER JOIN mv_employees.salary s 
+  ON e.id = s.employee_id 
+  INNER JOIN cte_previous_salary p 
+  ON e.id = p.employee_id 
+  INNER JOIN mv_employees.department_employee dp 
+  ON e.id = dp.employee_id 
+  INNER JOIN mv_employees.department d 
+  ON dp.department_id = d.id 
+  WHERE s.to_date = '9999-01-01' AND t.to_date = '9999-01-01' and dp.to_date = '9999-01-01'),
+final_output AS 
+(SELECT 
+  employee_id,
+  gender,
+  title,
+  salary,
+  department,
+  ROUND(100*(salary - previous_salary) / (previous_salary)::NUMERIC,2) AS salary_percentage_change,
+  DATE_PART('year',now()) - DATE_PART('year',hire_date) AS company_tenure_years,
+  DATE_PART('year',now()) - DATE_PART('year',title_from_date) AS title_tenure_years,
+  DATE_PART('year',now()) - DATE_PART('year',department_from_date) AS department_tenure_years
+FROM cte_joined_data)
+SELECT 
+  *
+FROM final_output;
+
+
+SELECT 
+  * 
+FROM mv_employees.current_employee_snapshot 
+LIMIT 5;
+
+```
+
+<br>
+
+| employee_id	| gender| title	| salary| department	| salary_percentage_change| company_tenure_years	| title_tenure_years| department_tenure_years	| 
+| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:|
+|10001|	M|	Senior Engineer|	88958|	Development|	4.54|	17|	17|	17|
+|10002|	F|	Staff|	72527|	Sales|	0.78|	18|	7|	7|
+|10003|	M|	Senior Engineer|	43311|	Production|	-0.89|	17|	8|	8|
+|10004|	M|	Senior Engineer|	74057|	Production|	4.75|	17|	8|	17|
+|10005|	M|	Senior Staff|	94692|	Human Resources|	3.54|	14|	7|	14|
+
+<br>
+
+

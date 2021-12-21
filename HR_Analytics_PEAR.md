@@ -692,3 +692,128 @@ LIMIT 5;
 <br>
 
 
+### Dashboard Aggregation Views 
+
+<br>
+
+#### Company Level
+
+<br>
+
+```sql
+
+DROP VIEW IF EXISTS mv_employees.company_level_dashboard;
+CREATE VIEW mv_employees.company_level_dashboard AS 
+SELECT 
+  gender,
+  COUNT(*) AS employee_count,
+  ROUND(100 * COUNT(*)::NUMERIC/ SUM(COUNT(*)) OVER ()) AS employee_percentage,
+  ROUND(AVG(salary)) AS avg_salary,
+  ROUND(AVG(salary_percentage_change)) AS avg_salary_percentage_change,
+  ROUND(MIN(salary)) AS min_salary,
+  ROUND(MAX(salary)) AS max_salary,
+  ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY salary)) AS median_salary,
+  ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY salary) - PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY salary)) AS inter_quartile_range,
+  ROUND(STDDEV(salary)) AS stddev_salary
+FROM mv_employees.current_employee_snapshot
+GROUP BY gender;
+
+```
+
+<br>
+
+| gender	| employee_count| employee_percentage	| avg_salary| avg_salary_percentage_change	| min_salary| max_salary	| median_salary| inter_quartile_range	| stddev_salary|
+| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:|
+|M|	144114|	60|	13|	72045|	3|	38623|	158220|	69830|	23624|	17363|
+|F|	96010|	40|	13|	71964|	3|	38936|	152710|	69764|	23326|	17230|
+
+<br>
+
+#### Department Level
+
+<br>
+
+```sql
+
+DROP VIEW IF EXISTS mv_employees.department_level_dashboard;
+CREATE VIEW mv_employees.department_level_dashboard AS 
+SELECT 
+  gender,
+  department,
+  COUNT(*) AS employee_count,
+  ROUND(100 * COUNT(*)::NUMERIC/ SUM(COUNT(*)) OVER (PARTITION BY department)) AS employee_percentage,
+  ROUND(AVG(department_tenure_years)) AS department_tenure,
+  ROUND(AVG(salary)) AS avg_salary,
+  ROUND(AVG(salary_percentage_change)) AS avg_salary_percentage_change,
+  ROUND(MIN(salary)) AS min_salary,
+  ROUND(MAX(salary)) AS max_salary,
+  ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY salary)) AS median_salary,
+  ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY salary) - PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY salary)) AS inter_quartile_range,
+  ROUND(STDDEV(salary)) AS stddev_salary
+FROM mv_employees.current_employee_snapshot
+GROUP BY 1,2;
+
+
+SELECT 
+  *
+FROM mv_employees.department_level_dashboard
+LIMIT 5;
+
+```
+
+<br>
+
+| gender	| department| employee_count| employee_percentage	|department_tenure| avg_salary| avg_salary_percentage_change	| min_salary| max_salary	| median_salary| inter_quartile_range	| stddev_salary|
+| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:|
+|M|	Customer Service|	10562|	60|	9|	67203|	3|	39373|	143950|	65100|	20097|	15921|
+|M|	Development|	36853|	40|	11|	67713|	3|	39036|	140784|	66526|	19664|	14267|
+|M|	Finance|	7423|	60|	11|	78433|	3|	39012|	142395|	77526|	24078	|17242|
+|M|	Human Resources|	7751|	40|	11|	63777|	3|	39611|	141953|	62864|	17607|	12843|
+|M|	Marketing|	8978|	60|	10|	80293|	3|	39821|	145128|	79481|	24990|	17480|
+
+<br>
+
+#### Title Level
+
+<br>
+
+```sql
+
+DROP VIEW IF EXISTS mv_employees.title_level_dashboard;
+CREATE VIEW mv_employees.title_level_dashboard AS 
+SELECT 
+  gender,
+  title,
+  COUNT(*) AS employee_count,
+  ROUND(100 * COUNT(*)::NUMERIC/ SUM(COUNT(*)) OVER (PARTITION BY title)) AS employee_percentage,
+  ROUND(AVG(title_tenure_years)) AS title_tenure,
+  ROUND(AVG(salary)) AS avg_salary,
+  ROUND(AVG(salary_percentage_change)) AS avg_salary_percentage_change,
+  ROUND(MIN(salary)) AS min_salary,
+  ROUND(MAX(salary)) AS max_salary,
+  ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY salary)) AS median_salary,
+  ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY salary) - PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY salary)) AS inter_quartile_range,
+  ROUND(STDDEV(salary)) AS stddev_salary
+FROM mv_employees.current_employee_snapshot
+GROUP BY 1,2;
+
+SELECT 
+  *
+FROM mv_employees.title_level_dashboard
+LIMIT 5;
+
+```
+
+<br>
+
+
+| gender	| title| employee_count| employee_percentage	|title_tenure| avg_salary| avg_salary_percentage_change	| min_salary| max_salary	| median_salary| inter_quartile_range	| stddev_salary|
+| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:| :---:|
+|M|	Assistant Engineer|	2148|	60|	6|	57198|	4|	39827|	117636|	54384|	14972|	11152|
+|F|	Assistant Engineer|	1440|	40|	6|	57496|	4|	39469|	106340|	55234	|14679|	10805|
+|M|	Engineer|	18571|	60|	6|	59593|	4|	38942|	130939|	56941|	17311|	12416|
+|F|	Engineer|	12412|	40|	6|	59617|	4|	39519|	115444|	57220|	17223|	12211|
+|M|	Manager|	5|	56|	9|	79351|	2|	56654|	106491|	72876|	43242|	23615|
+
+<br>
+

@@ -820,3 +820,300 @@ LIMIT 5;
 
 <br>
 
+
+### SQL solution - Historic Employee Results 
+
+```sql
+
+CREATE OR REPLACE VIEW mv_employees.current_employee_snapshot AS 
+WITH cte_previous_salary AS (
+  SELECT 
+    * 
+  FROM
+    (SELECT 
+      employee_id,
+      to_date,
+      LAG(amount) OVER (PARTITION BY employee_id ORDER BY from_date) AS amount
+    FROM mv_employees.salary) all_salaries
+  WHERE to_date = '9999-01-01'
+  ),
+
+cte_joined_data AS (
+  SELECT 
+    e.id AS employee_id,
+    CONCAT_WS(' ',e.first_name, e.last_name) AS employee_name,
+    e.gender,
+    e.hire_date,
+    t.title,
+    s.amount AS salary,
+    c.amount AS previous_salary,
+    d.dept_name AS department,
+    CONCAT_WS(' ',manager.first_name, manager.last_name) AS manager,
+    t.from_date AS title_from_date,
+    de.from_date AS department_from_date
+  FROM mv_employees.employee e 
+  INNER JOIN mv_employees.title t 
+  ON e.id = t.employee_id 
+  INNER JOIN mv_employees.salary s 
+  ON e.id = s.employee_id 
+  INNER JOIN cte_previous_salary c 
+  ON e.id = c.employee_id 
+  INNER JOIN mv_employees.department_employee de 
+  ON e.id = de.employee_id 
+  INNER JOIN mv_employees.department d 
+  ON de.department_id = d.id 
+  INNER JOIN mv_employees.department_manager dm 
+  ON d.id = dm.department_id 
+  INNER JOIN mv_employees.employee AS manager 
+  ON dm.employee_id = manager.id 
+  WHERE s.to_date = '9999-01-01' 
+  AND t.to_date = '9999-01-01'
+  AND de.to_date = '9999-01-01'
+  AND dm.to_date = '9999-01-01'
+)
+
+SELECT 
+  employee_id,
+  gender,
+  title,
+  salary,
+  department,
+  ROUND(100 * (salary - previous_salary) / previous_salary :: NUMERIC, 2) AS salary_percentage_change,
+  DATE_PART('year', now()) - DATE_PART('year', hire_date) as company_tenure_years,
+  DATE_PART('year', now()) - DATE_PART('year', title_from_date) as title_tenure_years,
+  DATE_PART('year', now()) - DATE_PART('year', department_from_date) as department_tenure_years,
+  employee_name,
+  manager
+FROM cte_joined_data;
+
+-- Generating benchmark views 
+
+DROP VIEW IF EXISTS mv_employees.tenure_benchmark;
+CREATE VIEW mv_employees.tenure_benchmark AS 
+SELECT 
+  company_tenure_years,
+  AVG(salary) AS tenure_benchmark_salary
+FROM mv_employees.current_employee_snapshot
+GROUP BY 1;
+
+
+DROP VIEW IF EXISTS mv_employees.gender_benchmark;
+CREATE VIEW mv_employees.gender_benchmark AS 
+SELECT 
+  gender,
+  AVG(salary) AS gender_benchmark_salary
+FROM mv_employees.current_employee_snapshot
+GROUP BY 1;
+
+
+DROP VIEW IF EXISTS mv_employees.department_benchmark;
+CREATE VIEW mv_employees.department_benchmark AS 
+SELECT 
+  department,
+  AVG(salary) AS department_benchmark_salary
+FROM mv_employees.current_employee_snapshot
+GROUP BY 1;
+
+
+DROP VIEW IF EXISTS mv_employees.title_benchmark;
+CREATE VIEW mv_employees.title_benchmark AS 
+SELECT 
+  title,
+  AVG(salary) AS title_benchmark_salary
+FROM mv_employees.current_employee_snapshot
+GROUP BY 1;
+
+-- Historic employee record view based on all the previously generated views 
+
+DROP VIEW IF EXISTS mv_employees.historic_employees_record CASCADE;
+CREATE VIEW mv_employees.historic_employee_records AS 
+WITH cte_previous_salary AS (
+  SELECT
+    *
+  FROM 
+    (SELECT 
+      employee_id,
+      to_date,
+      LAG(amount) OVER (PARTITION BY employee_id ORDER BY from_date) AS amount,
+      ROW_NUMBER() OVER (PARTITION BY employee_id ORDER BY to_date DESC) AS record_rank
+    FROM mv_employees.salary) all_salaries
+  WHERE record_rank = 1
+),
+
+cte_joined_data AS (
+  SELECT 
+    e.id AS employee_id,
+    e.birth_date,
+    DATE_PART('year', now()) - DATE_PART('year', e.birth_date) AS employee_age,
+    CONCAT_WS(' ',e.first_name, e.last_name) AS employee_name,
+    e.gender,
+    e.hire_date,
+    t.title,
+    s.amount AS salary,
+    c.amount AS previous_latest_salary,
+    d.dept_name AS department,
+    CONCAT_WS(' ',manager.first_name, manager.last_name) AS manager,
+    DATE_PART('year', now()) - DATE_PART('year', e.hire_date) AS company_tenure_years,
+    DATE_PART('year', now()) - DATE_PART('year', t.from_date) AS title_tenure_years,
+    DATE_PART('year', now()) - DATE_PART('year', de.from_date) AS department_tenure_years,
+    DATE_PART('months', AGE(now(),t.from_date)) AS title_tenure_months,
+    GREATEST(
+      t.from_date,
+      s.from_date,
+      de.from_date
+      ) AS effective_date,
+    LEAST(
+      t.to_date,
+      s.to_date,
+      de.to_date
+      ) AS expiry_date
+  FROM mv_employees.employee e 
+  INNER JOIN mv_employees.title t 
+  ON e.id = t.employee_id 
+  INNER JOIN mv_employees.salary s 
+  ON e.id = s.employee_id 
+  INNER JOIN cte_previous_salary c 
+  ON e.id = c.employee_id 
+  INNER JOIN mv_employees.department_employee de 
+  ON e.id = de.employee_id 
+  INNER JOIN mv_employees.department d 
+  ON de.department_id = d.id 
+  INNER JOIN mv_employees.department_manager dm 
+  ON d.id = dm.department_id 
+  INNER JOIN mv_employees.employee AS manager 
+  ON dm.employee_id = manager.id  
+),
+
+cte_ordered_transactions AS (
+  SELECT 
+    employee_id,
+    birth_date,
+    employee_age,
+    employee_name,
+    gender,
+    hire_date,
+    title,
+    LAG(title) OVER w AS previous_title,
+    salary,
+    previous_latest_salary,
+    LAG(salary) OVER w AS previous_salary,
+    department,
+    LAG(department) OVER w AS previous_department,
+    manager,
+    LAG(manager) OVER w AS previous_manager,
+    company_tenure_years,
+    title_tenure_years,
+    title_tenure_months,
+    department_tenure_years,
+    effective_date,
+    expiry_date,
+    ROW_NUMBER() OVER (PARTITION BY employee_id ORDER BY effective_date DESC) AS event_order 
+  FROM cte_joined_data 
+  WHERE effective_date <= expiry_date
+  WINDOW w AS (PARTITION BY employee_id ORDER BY effective_date)
+),
+
+final_output AS 
+(
+  SELECT 
+    base.employee_id,
+    base.gender,
+    base.birth_date,
+    base.employee_age,
+    base.hire_date,
+    base.title,
+    base.employee_name,
+    base.previous_title,
+    base.salary,
+    previous_latest_salary,
+    -- previous salary is based off the LAG records
+    base.previous_salary,
+    base.department,
+    base.previous_department,
+    base.manager,
+    base.previous_manager,
+    -- tenure metrics
+    base.company_tenure_years,
+    base.title_tenure_years,
+    base.title_tenure_months,
+    base.department_tenure_years,
+    base.event_order,
+    -- only include the latest salary change for the first event_order row
+    CASE
+      WHEN event_order = 1
+        THEN ROUND(
+          100 * (base.salary - base.previous_latest_salary) /
+            base.previous_latest_salary::NUMERIC,
+          2
+        )
+      ELSE NULL
+    END AS latest_salary_percentage_change,
+    -- event type logic by comparing all of the previous lag records
+    CASE
+      WHEN base.previous_salary < base.salary
+        THEN 'Salary Increase'
+      WHEN base.previous_salary > base.salary
+        THEN 'Salary Decrease'
+      WHEN base.previous_department <> base.department
+        THEN 'Dept Transfer'
+      WHEN base.previous_manager <> base.manager
+        THEN 'Reporting Line Change'
+      WHEN base.previous_title <> base.title
+        THEN 'Title Change'
+      ELSE NULL
+    END AS event_name,
+    -- salary change
+    ROUND(base.salary - base.previous_salary) AS salary_amount_change,
+    ROUND(
+      100 * (base.salary - base.previous_salary) / base.previous_salary::NUMERIC,
+      2
+    ) AS salary_percentage_change,
+    -- benchmark comparisons - we've omit the aliases for succinctness!
+    -- tenure
+    ROUND(tenure_benchmark_salary) AS tenure_benchmark_salary,
+    ROUND(
+      100 * (base.salary - tenure_benchmark_salary)
+        / tenure_benchmark_salary::NUMERIC
+    ) AS tenure_comparison,
+    -- title
+    ROUND(title_benchmark_salary) AS title_benchmark_salary,
+    ROUND(
+      100 * (base.salary - title_benchmark_salary)
+        / title_benchmark_salary::NUMERIC
+    ) AS title_comparison,
+    -- department
+    ROUND(department_benchmark_salary) AS department_benchmark_salary,
+    ROUND(
+      100 * (salary - department_benchmark_salary)
+        / department_benchmark_salary::NUMERIC
+    ) AS department_comparison,
+    -- gender
+    ROUND(gender_benchmark_salary) AS gender_benchmark_salary,
+    ROUND(
+      100 * (base.salary - gender_benchmark_salary)
+        / gender_benchmark_salary::NUMERIC
+    ) AS gender_comparison,
+    -- usually best practice to leave the effective/expiry dates at the end
+    base.effective_date,
+    base.expiry_date
+  FROM cte_ordered_transactions AS base
+  INNER JOIN mv_employees.tenure_benchmark tb 
+  ON base.company_tenure_years = tb.company_tenure_years
+  INNER JOIN mv_employees.title_benchmark tib 
+  ON base.title = tib.title 
+  INNER JOIN mv_employees.department_benchmark db 
+  ON base.department = db.department
+  INNER JOIN mv_employees.gender_benchmark gb 
+  ON base.gender = gb.gender
+)
+
+SELECT * FROM final_output;
+
+DROP VIEW IF EXISTS mv_employees.employee_deep_dive;
+CREATE VIEW mv_employees.employee_deep_dive AS 
+SELECT 
+  *
+FROM mv_employees.historic_employee_records
+WHERE event_order <= 5;
+
+```

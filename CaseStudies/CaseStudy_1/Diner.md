@@ -28,3 +28,4 @@ He plans on using these insights to help him decide whether he should expand the
 <p align="center">
   <img width="857" height="498" src="Diner/Diner.png">
 </p>
+

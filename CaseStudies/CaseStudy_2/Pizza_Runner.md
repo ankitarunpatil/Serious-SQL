@@ -13,4 +13,8 @@ Danny started by recruiting “runners” to deliver fresh pizza from Pizza Runn
 ## ER Diagram 
 
 
+<br>
+<p align="center">
+  <img width="953" height="488" src="CaseStudy_2/Pizza_Runner.png">
+</p>
 

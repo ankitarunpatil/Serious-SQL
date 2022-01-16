@@ -24,3 +24,7 @@ He plans on using these insights to help him decide whether he should expand the
 
 ## ER Diagram
 
+<br>
+<p align="center">
+  <img width="498" height="746" src="CaseStudies/Case_Study_1/Diner.png">
+</p>

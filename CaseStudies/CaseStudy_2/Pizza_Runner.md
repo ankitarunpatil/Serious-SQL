@@ -15,6 +15,20 @@ Danny started by recruiting “runners” to deliver fresh pizza from Pizza Runn
 
 <br>
 <p align="center">
-  <img width="953" height="488" src="Pizza_Runner.png">
+  <img width="953" height="488" src="Pizza_Runner/Pizza_runner.png">
 </p>
+
+<br>
+
+
+## PEAR 
+  - P - Problem
+  - E - Exploration
+  - A - Analysis
+  - R - Result
+
+<br>
+
+## **Problem**
+
 

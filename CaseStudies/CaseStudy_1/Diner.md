@@ -26,5 +26,5 @@ He plans on using these insights to help him decide whether he should expand the
 
 <br>
 <p align="center">
-  <img width="857" height="498" src="CaseStudies/CaseStudy_1/Diner/Diner.png">
+  <img width="857" height="498" src="Diner/Diner.png">
 </p>

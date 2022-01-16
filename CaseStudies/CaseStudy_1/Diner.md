@@ -299,6 +299,7 @@ WHERE ranks = 1
 ```
 
 <br>
+
 | customer_id | order_date | product_name |
 | :---:| :---:| :---:|
 |A| 2021-01-07| curry|
@@ -426,6 +427,7 @@ ORDER BY 2;
 ```
 
 <br>
+
 | customer_id | points |
 | :---:| :---:|
 | B | 820 |

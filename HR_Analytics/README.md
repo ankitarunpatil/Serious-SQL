@@ -63,14 +63,14 @@
 
 <br>
 <p align="center">
-  <img width="498" height="746" src="HR_Analytics/Current_Snapshot.png">
+  <img width="498" height="746" src="Current_Snapshot.png">
 </p>
 
 ### Historic Employee Deep Dive 
 
 <br>
 <p align="center">
-  <img width="498" height="746" src="HR_Analytics/Historic_deep_dive.png">
+  <img width="498" height="746" src="Historic_deep_dive.png">
 </p>
 
 <br>
@@ -82,7 +82,7 @@
 
 <br>
 <p align="center">
-  <img width="750" height="450" src="HR_Analytics/ER.png">
+  <img width="750" height="450" src="ER.png">
 </p>
 
 <br>

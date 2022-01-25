@@ -129,7 +129,7 @@ FROM customer_orders_temp;
 
 <br>
 <p align="center">
-  <img width="953" height="488" src="Pizza_Runner/CustomerOrderTemp.png">
+  <img width="953" height="488" src="Pizza_Runner/CustomerOrdersTemp.png">
 </p>
 
 <br>

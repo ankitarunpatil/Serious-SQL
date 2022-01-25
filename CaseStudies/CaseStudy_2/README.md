@@ -209,3 +209,106 @@ FROM runner_orders_temp;
 </p>
 
 <br>
+
+
+### Pizza Names Table 
+
+<br>
+
+```sql
+
+SELECT 
+  *
+FROM pizza_runner.pizza_names
+LIMIT 10;
+
+```
+<br>
+
+| pizza_id | pizza_name |
+| :---:| :---:|
+| 1 | Meatlovers |
+| 2 | Vegetarian |
+
+<br>
+
+
+### Pizza Recipes Table 
+
+<br>
+
+```sql
+
+SELECT 
+  *
+FROM pizza_runner.pizza_recipes
+LIMIT 10;
+
+```
+
+<br>
+
+
+| pizza_id | pizza_name |
+| :---:| :---:|
+|1|	1, 2, 3, 4, 5, 6, 8, 10|
+|2|	4, 6, 7, 9, 11, 12|
+
+<br>
+
+### Pizza Toppings Table
+
+<br>
+
+```sql
+
+SELECT 
+  *
+FROM pizza_runner.pizza_toppings;
+
+```
+
+<br>
+
+| topping_id | topping_name |
+| :---:| :---:|
+|1|	Bacon|
+|2|	BBQ Sauce|
+|3|	Beef|
+|4|	Cheese|
+|5|	Chicken|
+|6|	Mushrooms|
+|7|	Onions|
+|8|	Pepperoni|
+|9|	Peppers|
+|10|	Salami|
+|11|	Tomatoes|
+|12|	Tomato Sauce|
+
+<br>
+
+## Analysis 
+
+### Case Study Questions 
+
+A. Pizza Metrics
+
+1. How many pizzas were ordered?
+
+2. How many unique customer orders were made?
+
+3. How many successful orders were delivered by each runner?
+
+4. How many of each type of pizza was delivered?
+
+5. How many Vegetarian and Meatlovers were ordered by each customer?
+
+6. What was the maximum number of pizzas delivered in a single order?
+
+7. For each customer, how many delivered pizzas had at least 1 change and how many had no changes?
+
+8. How many pizzas were delivered that had both exclusions and extras?
+
+9. What was the total volume of pizzas ordered for each hour of the day?
+
+10. What was the volume of orders for each day of the week?
